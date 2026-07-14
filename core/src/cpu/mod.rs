@@ -156,6 +156,13 @@ impl Cpu {
         self.set_flag(Flags::C, a < val);
     }
 
+    pub fn get_pc(&self) -> u16 {
+        self.pc
+    }
+
+    pub fn set_pc(&mut self, val: u16) {
+        self.pc = val;
+    }
     pub fn get_r16(&self, r: Regs16) -> u16 {
         match r {
             Regs16::AF => { merge_bytes(self.a, self.f) },
@@ -248,6 +255,19 @@ impl Cpu {
         val
     }
 
+    pub fn pop(&mut self) -> u16 {
+        assert_ne!(self.sp, 0xFFFE, "Trying to pop when the stack is empty");
+        let low = self.read_ram(self.sp);
+        let high = self.read_ram(self.sp + 1);
+        let val = merge_bytes(high, low);
+        self.sp += 2;
+        return val;
+    }
+    pub fn push(&mut self, val: u16) {
+        self.sp -= 2;
+        self.write_ram(self.sp, val.low_byte());
+        self.write_ram(self.sp + 1, val.high_byte());
+    }
     pub fn read_ram(&self, addr: u16) -> u8 {
         todo!();
     }

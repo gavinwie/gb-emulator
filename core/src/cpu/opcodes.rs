@@ -2,23 +2,23 @@ use crate::cpu::*;
 use crate::utils::*;
 
 const OPCODES: [fn(&mut Cpu) -> u8; 256] = [
-//  0x00,   0x01,   0x02,   0x03,   0x04,   0x05,   0x06,   0x07,   0x08,   0x09,   0x0A,   0x0B,   0x0C,   0x0D,   0x0E,   0x0F
-    nop_00, ld_01,  ld_02,  inc_03, inc_04, dec_05, ld_06,  todo,   ld_08,  add_09, ld_0a,  dec_0b, inc_0c, dec_0d, ld_0e,  todo,   // 0x00
-    todo,   ld_11,  ld_12,  inc_13, inc_14, dec_15, ld_16,  todo,   todo,   add_19, ld_1a,  dec_1b, inc_1c, dec_1d, ld_1e,  todo,   // 0x10
-    todo,   ld_21,  ld_22,  inc_23, inc_24, dec_25, ld_26,  todo,   todo,   add_29, ld_2a,  dec_2b, inc_2c, dec_2d, ld_2e,  todo,   // 0x20
-    todo,   ld_31,  ld_32,  inc_33, inc_34, dec_35, ld_36,  todo,   todo,   add_39, ld_3a,  dec_3b, inc_3c, dec_3d, ld_3e,  todo,   // 0x30
-    ld_40,  ld_41,  ld_42,  ld_43,  ld_44,  ld_45,  ld_46,  ld_47,  ld_48,  ld_49,  ld_4a,  ld_4b,  ld_4c,  ld_4d,  ld_4e,  ld_4f,  // 0x40
-    ld_50,  ld_51,  ld_52,  ld_53,  ld_54,  ld_55,  ld_56,  ld_57,  ld_58,  ld_59,  ld_5a,  ld_5b,  ld_5c,  ld_5d,  ld_5e,  ld_5f,  // 0x50
-    ld_60,  ld_61,  ld_62,  ld_63,  ld_64,  ld_65,  ld_66,  ld_67,  ld_68,  ld_69,  ld_6a,  ld_6b,  ld_6c,  ld_6d,  ld_6e,  ld_6f,  // 0x60
-    ld_70,  ld_71,  ld_72,  ld_73,  ld_74,  ld_75,  todo,   ld_77,  ld_78,  ld_79,  ld_7a,  ld_7b,  ld_7c,  ld_7d,  ld_7e,  ld_7f,  // 0x70
-    add_80, add_81, add_82, add_83, add_84, add_85, add_86, add_87, adc_88, adc_89, adc_8a, adc_8b, adc_8c, adc_8d, adc_8e, adc_8f, // 0x80
-    sub_90, sub_91, sub_92, sub_93, sub_94, sub_95, sub_96, sub_97, sbc_98, sbc_99, sbc_9a, sbc_9b, sbc_9c, sbc_9d, sbc_9e, sbc_9f, // 0x90
-    and_a0, and_a1, and_a2, and_a3, and_a4, and_a5, and_a6, and_a7, xor_a8, xor_a9, xor_aa, xor_ab, xor_ac, xor_ad, xor_ae, xor_af, // 0xA0
-    or_b0,  or_b1,  or_b2,  or_b3,  or_b4,  or_b5,  or_b6,  or_b7,  cp_b8,  cp_b9,  cp_ba,  cp_bb,  cp_bc,  cp_bd,  cp_be,  cp_bf,  // 0xB0
-    todo,   todo,   todo,   todo,   todo,   todo,   todo,   add_c6, todo,   todo,   todo,   todo,   todo,   todo,   adc_ce, todo,   // 0xC0
-    todo,   todo,   todo,   todo,   todo,   todo,   todo,   sub_d6, todo,   todo,   todo,   todo,   todo,   todo,   sbc_de, todo,   // 0xD0
-    ld_e0,  todo,   ld_e2,  todo,   todo,   todo,   todo,   and_e6, add_e8, todo,   ld_ea,  todo,   todo,   todo,   xor_ee, todo,   // 0xE0
-    ld_f0,  todo,   ld_f2,  todo,   todo,   todo,   todo,   or_f6,  ld_f8,  ld_f9,  ld_fa,   todo,  todo,   todo,   cp_fe,  todo,   // 0xF0
+//  0x00,   0x01,   0x02,   0x03,   0x04,    0x05,    0x06,   0x07,   0x08,   0x09,   0x0A,   0x0B,   0x0C,    0x0D,    0x0E,   0x0F
+    nop_00, ld_01,  ld_02,  inc_03, inc_04,  dec_05,  ld_06,  todo,   ld_08,  add_09, ld_0a,  dec_0b, inc_0c,  dec_0d,  ld_0e,  todo,   // 0x00
+    todo,   ld_11,  ld_12,  inc_13, inc_14,  dec_15,  ld_16,  todo,   jr_18,  add_19, ld_1a,  dec_1b, inc_1c,  dec_1d,  ld_1e,  todo,   // 0x10
+    jr_20,  ld_21,  ld_22,  inc_23, inc_24,  dec_25,  ld_26,  todo,   jr_28,  add_29, ld_2a,  dec_2b, inc_2c,  dec_2d,  ld_2e,  todo,   // 0x20
+    jr_30,  ld_31,  ld_32,  inc_33, inc_34,  dec_35,  ld_36,  todo,   jr_38,  add_39, ld_3a,  dec_3b, inc_3c,  dec_3d,  ld_3e,  todo,   // 0x30
+    ld_40,  ld_41,  ld_42,  ld_43,  ld_44,   ld_45,   ld_46,  ld_47,  ld_48,  ld_49,  ld_4a,  ld_4b,  ld_4c,   ld_4d,   ld_4e,  ld_4f,  // 0x40
+    ld_50,  ld_51,  ld_52,  ld_53,  ld_54,   ld_55,   ld_56,  ld_57,  ld_58,  ld_59,  ld_5a,  ld_5b,  ld_5c,   ld_5d,   ld_5e,  ld_5f,  // 0x50
+    ld_60,  ld_61,  ld_62,  ld_63,  ld_64,   ld_65,   ld_66,  ld_67,  ld_68,  ld_69,  ld_6a,  ld_6b,  ld_6c,   ld_6d,   ld_6e,  ld_6f,  // 0x60
+    ld_70,  ld_71,  ld_72,  ld_73,  ld_74,   ld_75,   todo,   ld_77,  ld_78,  ld_79,  ld_7a,  ld_7b,  ld_7c,   ld_7d,   ld_7e,  ld_7f,  // 0x70
+    add_80, add_81, add_82, add_83, add_84,  add_85,  add_86, add_87, adc_88, adc_89, adc_8a, adc_8b, adc_8c,  adc_8d,  adc_8e, adc_8f, // 0x80
+    sub_90, sub_91, sub_92, sub_93, sub_94,  sub_95,  sub_96, sub_97, sbc_98, sbc_99, sbc_9a, sbc_9b, sbc_9c,  sbc_9d,  sbc_9e, sbc_9f, // 0x90
+    and_a0, and_a1, and_a2, and_a3, and_a4,  and_a5,  and_a6, and_a7, xor_a8, xor_a9, xor_aa, xor_ab, xor_ac,  xor_ad,  xor_ae, xor_af, // 0xA0
+    or_b0,  or_b1,  or_b2,  or_b3,  or_b4,   or_b5,   or_b6,  or_b7,  cp_b8,  cp_b9,  cp_ba,  cp_bb,  cp_bc,   cp_bd,   cp_be,  cp_bf,  // 0xB0
+    ret_c0, pop_c1, jp_c2,  jp_c3,  call_c4, push_c5, add_c6, rst_c7, ret_c8, ret_c9, jp_ca,  todo,   call_cc, call_cd, adc_ce, rst_cf, // 0xC0
+    ret_d0, pop_d1, jp_d2,  todo,   call_d4, push_d5, sub_d6, rst_d7, ret_d8, todo,   jp_da,  todo,   call_dc, todo,    sbc_de, rst_df, // 0xD0
+    ld_e0,  pop_e1, ld_e2,  todo,   todo,    push_e5, and_e6, rst_e7, add_e8, jp_e9,  ld_ea,  todo,   todo,    todo,    xor_ee, rst_ef, // 0xE0
+    ld_f0,  pop_f1, ld_f2,  todo,   todo,    push_f5, or_f6,  rst_f7, ld_f8,  ld_f9,  ld_fa,  todo,   todo,    todo,    cp_fe,  rst_ff, // 0xF0
 ];
 
 fn todo(cpu: &mut Cpu) -> u8 {
@@ -163,6 +163,15 @@ fn ld_16(cpu: &mut Cpu) -> u8 {
     cpu.set_r8(Regs8::D, value);
     2
 }
+// JR i8
+// ----
+fn jr_18(cpu: &mut Cpu) -> u8 {
+    let offset = cpu.fetch() as i8 as u16;
+    let pc = cpu.get_pc();
+    let new_pc = pc.wrapping_add(offset);
+    cpu.set_pc(new_pc);
+    3
+}
 // ADD HL, DE
 // -0HC
 fn add_19(cpu: &mut Cpu) -> u8 {
@@ -203,6 +212,19 @@ fn ld_1e(cpu: &mut Cpu) -> u8 {
     2
 }
 
+// JR NZ, i8
+// ----
+fn jr_20(cpu: &mut Cpu) -> u8 {
+    let offset = cpu.fetch() as i8 as i16 as u16;
+    if !cpu.get_flag(Flags::Z) {
+        let mut pc = cpu.get_pc();
+        pc = pc.wrapping_add(offset);
+        cpu.set_pc(pc);
+        3
+    } else {
+        2
+    }
+}
 // LD HL, u16
 // ----
 fn ld_21(cpu: &mut Cpu) -> u8 {
@@ -243,6 +265,19 @@ fn ld_26(cpu: &mut Cpu) -> u8 {
     let value = cpu.fetch();
     cpu.set_r8(Regs8::H, value);
     2
+}
+// JR Z, i8
+// ----
+fn jr_28(cpu: &mut Cpu) -> u8 {
+    let offset = cpu.fetch() as i8 as i16 as u16;
+    if cpu.get_flag(Flags::Z) {
+        let mut pc = cpu.get_pc();
+        pc = pc.wrapping_add(offset);
+        cpu.set_pc(pc);
+        3
+    } else {
+        2
+    }
 }
 // ADD HL, HL
 // -0HC
@@ -285,6 +320,19 @@ fn ld_2e(cpu: &mut Cpu) -> u8 {
     2
 }
 
+// JR NC, i8
+// ----
+fn jr_30(cpu: &mut Cpu) -> u8 {
+    let offset = cpu.fetch() as i8 as i16 as u16;
+    if !cpu.get_flag(Flags::C) {
+        let mut pc = cpu.get_pc();
+        pc = pc.wrapping_add(offset);
+        cpu.set_pc(pc);
+        3
+    } else {
+        2
+    }
+}
 // LD SP, u16
 // ----
 fn ld_31(cpu: &mut Cpu) -> u8 {
@@ -325,6 +373,19 @@ fn ld_36(cpu: &mut Cpu) -> u8 {
     let value = cpu.fetch();
     cpu.set_r8(Regs8::HL, value);
     3
+}
+// JR C, i8
+// ----
+fn jr_38(cpu: &mut Cpu) -> u8 {
+    let offset = cpu.fetch() as i8 as i16 as u16;
+    if cpu.get_flag(Flags::C) {
+        let mut pc = cpu.get_pc();
+        pc = pc.wrapping_add(offset);
+        cpu.set_pc(pc);
+        3
+    } else {
+        2
+    }
 }
 // ADD HL, SP
 // -0HC
@@ -1252,13 +1313,123 @@ fn cp_bf(cpu: &mut Cpu) -> u8 {
     cpu.cp_a_u8(value);
     1
 }
-
+// RET NZ
+// ----
+fn ret_c0(cpu: &mut Cpu) -> u8 {
+    if !cpu.get_flag(Flags::Z) {
+        let addr = cpu.pop();
+        cpu.set_pc(addr);
+        5
+    } else {
+        2
+    }
+}
+// POP BC
+// ----
+fn pop_c1(cpu: &mut Cpu) -> u8 {
+    let value = cpu.pop();
+    cpu.set_r16(Regs16::BC, value);
+    3
+}
+// JP NZ, u16
+// ----
+fn jp_c2(cpu: &mut Cpu) -> u8 {
+    let addr = cpu.fetch_u16();
+    if !cpu.get_flag(Flags::Z) {
+        cpu.set_pc(addr);
+        4
+    } else {
+        3
+    }
+}
+// JP u16
+// ----
+fn jp_c3(cpu: &mut Cpu) -> u8 {
+    let addr = cpu.fetch_u16();
+    cpu.set_pc(addr);
+    4
+}
+// CALL NZ, u16
+// ----
+fn call_c4(cpu: &mut Cpu) -> u8 {
+    let addr = cpu.fetch_u16();
+    if !cpu.get_flag(Flags::Z) {
+        cpu.push(cpu.get_pc());
+        cpu.set_pc(addr);
+        6
+    } else {
+        3
+    }
+}
+// PUSH BC
+// ----
+fn push_c5(cpu: &mut Cpu) -> u8 {
+    let value = cpu.get_r16(Regs16::BC);
+    cpu.push(value);
+    4
+}
 // ADD A, u8
 // Z0HC
 fn add_c6(cpu: &mut Cpu) -> u8 {
     let value = cpu.fetch();
     cpu.add_a_u8(value, false);
     2
+}
+// RST 00
+// ----
+fn rst_c7(cpu: &mut Cpu) -> u8 {
+    cpu.push(cpu.get_pc());
+    cpu.set_pc(0x0000);
+    4
+}
+// RET Z
+// ----
+fn ret_c8(cpu: &mut Cpu) -> u8 {
+    if cpu.get_flag(Flags::Z) {
+        let addr = cpu.pop();
+        cpu.set_pc(addr);
+        5
+    } else {
+        2
+    }
+}
+// RET
+// ----
+fn ret_c9(cpu: &mut Cpu) -> u8 {
+    let addr = cpu.pop();
+    cpu.set_pc(addr);
+    4
+}
+// JP Z, u16
+// ----
+fn jp_ca(cpu: &mut Cpu) -> u8 {
+    let addr = cpu.fetch_u16();
+    if cpu.get_flag(Flags::Z) {
+        cpu.set_pc(addr);
+        4
+    } else {
+        3
+    }
+}
+// CALL Z, u16
+// ----
+fn call_cc(cpu: &mut Cpu) -> u8 {
+    let addr = cpu.fetch_u16();
+    if cpu.get_flag(Flags::Z) {
+        cpu.push(cpu.get_pc());
+        cpu.set_pc(addr);
+        6
+    } else {
+        3
+    }
+}
+// CALL u16
+// ----
+fn call_cd(cpu: &mut Cpu) -> u8 {
+    let addr = cpu.fetch_u16();
+    cpu.push(cpu.get_pc());
+    cpu.set_pc(addr);
+    6
 }
 // ADC A, u8
 // Z0HC
@@ -1267,7 +1438,62 @@ fn adc_ce(cpu: &mut Cpu) -> u8 {
     cpu.add_a_u8(value, true);
     2
 }
+// RST 08
+// ----
+fn rst_cf(cpu: &mut Cpu) -> u8 {
+    cpu.push(cpu.get_pc());
+    cpu.set_pc(0x0008);
+    4
+}
 
+// RET NC
+// ----
+fn ret_d0(cpu: &mut Cpu) -> u8 {
+    if !cpu.get_flag(Flags::C) {
+        let addr = cpu.pop();
+        cpu.set_pc(addr);
+        5
+    } else {
+        2
+    }
+}
+// POP DE
+// ----
+fn pop_d1(cpu: &mut Cpu) -> u8 {
+    let value = cpu.pop();
+    cpu.set_r16(Regs16::DE, value);
+    3
+}
+// JP NC, u16
+// ----
+fn jp_d2(cpu: &mut Cpu) -> u8 {
+    let addr = cpu.fetch_u16();
+    if !cpu.get_flag(Flags::C) {
+        cpu.set_pc(addr);
+        4
+    } else {
+        3
+    }
+}
+// CALL NC, u16
+// ----
+fn call_d4(cpu: &mut Cpu) -> u8 {
+    let addr = cpu.fetch_u16();
+    if !cpu.get_flag(Flags::C) {
+        cpu.push(cpu.get_pc());
+        cpu.set_pc(addr);
+        6
+    } else {
+        3
+    }
+}
+// PUSH DE
+// ----
+fn push_d5(cpu: &mut Cpu) -> u8 {
+    let value = cpu.get_r16(Regs16::DE);
+    cpu.push(value);
+    4
+}
 // SUB A, u8
 // Z1HC
 fn sub_d6(cpu: &mut Cpu) -> u8 {
@@ -1275,12 +1501,60 @@ fn sub_d6(cpu: &mut Cpu) -> u8 {
     cpu.sub_a_u8(value, false);
     2
 }
+// RST 10
+// ----
+fn rst_d7(cpu: &mut Cpu) -> u8 {
+    cpu.push(cpu.get_pc());
+    cpu.set_pc(0x0010);
+    4
+}
+// RET C
+// ----
+fn ret_d8(cpu: &mut Cpu) -> u8 {
+    if cpu.get_flag(Flags::C) {
+        let addr = cpu.pop();
+        cpu.set_pc(addr);
+        5
+    } else {
+        2
+    }
+}
+// JP C, u16
+// ----
+fn jp_da(cpu: &mut Cpu) -> u8 {
+    let addr = cpu.fetch_u16();
+    if cpu.get_flag(Flags::C) {
+        cpu.set_pc(addr);
+        4
+    } else {
+        3
+    }
+}
+// CALL C, u16
+// ----
+fn call_dc(cpu: &mut Cpu) -> u8 {
+    let addr = cpu.fetch_u16();
+    if cpu.get_flag(Flags::C) {
+        cpu.push(cpu.get_pc());
+        cpu.set_pc(addr);
+        6
+    } else {
+        3
+    }
+}
 // SBC A, u8
 // Z1HC
 fn sbc_de(cpu: &mut Cpu) -> u8 {
     let value = cpu.fetch();
     cpu.sub_a_u8(value, true);
     2
+}
+// RST 18
+// ----
+fn rst_df(cpu: &mut Cpu) -> u8 {
+    cpu.push(cpu.get_pc());
+    cpu.set_pc(0x0018);
+    4
 }
 
 // LD (FF00+u8), A
@@ -1292,6 +1566,13 @@ fn ld_e0(cpu: &mut Cpu) -> u8 {
     cpu.write_ram(addr, value);
     3
 }
+// POP HL
+// ----
+fn pop_e1(cpu: &mut Cpu) -> u8 {
+    let value = cpu.pop();
+    cpu.set_r16(Regs16::HL, value);
+    3
+}
 // LD (FF00+C), A
 // ----
 fn ld_e2(cpu: &mut Cpu) -> u8 {
@@ -1301,12 +1582,26 @@ fn ld_e2(cpu: &mut Cpu) -> u8 {
     cpu.write_ram(addr, value);
     2
 }
+// PUSH HL
+// ----
+fn push_e5(cpu: &mut Cpu) -> u8 {
+    let value = cpu.get_r16(Regs16::HL);
+    cpu.push(value);
+    4
+}
 // AND A, u8
 // Z010
 fn and_e6(cpu: &mut Cpu) -> u8 {
     let value = cpu.fetch();
     cpu.and_a_u8(value);
     2
+}
+// RST 20
+// ----
+fn rst_e7(cpu: &mut Cpu) -> u8 {
+    cpu.push(cpu.get_pc());
+    cpu.set_pc(0x0020);
+    4
 }
 // ADD SP, i8
 // 00HC
@@ -1324,6 +1619,13 @@ fn add_e8(cpu: &mut Cpu) -> u8 {
     cpu.set_flag(Flags::C, set_c);
     2
 }
+// JP HL
+// ----
+fn jp_e9(cpu: &mut Cpu) -> u8 {
+    let addr = cpu.get_r16(Regs16::HL);
+    cpu.set_pc(addr);
+    1
+}
 // LD (u16), A
 // ----
 fn ld_ea(cpu: &mut Cpu) -> u8 {
@@ -1339,6 +1641,13 @@ fn xor_ee(cpu: &mut Cpu) -> u8 {
     cpu.xor_a_u8(value);
     2
 }
+// RST 28
+// ----
+fn rst_ef(cpu: &mut Cpu) -> u8 {
+    cpu.push(cpu.get_pc());
+    cpu.set_pc(0x0028);
+    4
+}
 
 // LD A, (FF00+u8)
 // ----
@@ -1347,6 +1656,13 @@ fn ld_f0(cpu: &mut Cpu) -> u8 {
     let addr = 0xFF00 + offset;
     let value = cpu.read_ram(addr);
     cpu.set_r8(Regs8::A, value);
+    3
+}
+// POP AF
+// ----
+fn pop_f1(cpu: &mut Cpu) -> u8 {
+    let value = cpu.pop();
+    cpu.set_r16(Regs16::AF, value);
     3
 }
 // LD A, (FF00+C)
@@ -1358,12 +1674,26 @@ fn ld_f2(cpu: &mut Cpu) -> u8 {
     cpu.set_r8(Regs8::A, value);
     2
 }
+// PUSH AF
+// ----
+fn push_f5(cpu: &mut Cpu) -> u8 {
+    let value = cpu.get_r16(Regs16::AF);
+    cpu.push(value);
+    4
+}
 // OR A, u8
 // Z010
 fn or_f6(cpu: &mut Cpu) -> u8 {
     let value = cpu.fetch();
     cpu.or_a_u8(value);
     2
+}
+// RST 30
+// ----
+fn rst_f7(cpu: &mut Cpu) -> u8 {
+    cpu.push(cpu.get_pc());
+    cpu.set_pc(0x0030);
+    4
 }
 // LD HL, SP+i8
 // 00HC
@@ -1401,4 +1731,11 @@ fn cp_fe(cpu: &mut Cpu) -> u8 {
     let value = cpu.fetch();
     cpu.cp_a_u8(value);
     2
+}
+// RST 38
+// ----
+fn rst_ff(cpu: &mut Cpu) -> u8 {
+    cpu.push(cpu.get_pc());
+    cpu.set_pc(0x0038);
+    4
 }
