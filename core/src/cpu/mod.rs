@@ -82,6 +82,79 @@ impl Cpu {
         self.set_flag(Flags::Z, inc == 0);
         self.set_flag(Flags::H, set_h);
     }
+    pub fn and_a_u8(&mut self, val: u8){
+        let mut a = self.get_r8(Regs8::A);
+        a &= val;
+        self.set_r8(Regs8::A, a);
+        self.set_flag(Flags::Z, a == 0);
+        self.set_flag(Flags::N, false);
+        self.set_flag(Flags::H, true);
+        self.set_flag(Flags::C, false);
+    }
+    pub fn or_a_u8(&mut self, val: u8){
+        let mut a = self.get_r8(Regs8::A);
+        a |= val;
+        self.set_r8(Regs8::A, a);
+        self.set_flag(Flags::Z, a == 0);
+        self.set_flag(Flags::N, false);
+        self.set_flag(Flags::H, false);
+        self.set_flag(Flags::C, false);
+    }
+    pub fn xor_a_u8(&mut self, val: u8){
+        let mut a = self.get_r8(Regs8::A);
+        a ^= val;
+        self.set_r8(Regs8::A, a);
+        self.set_flag(Flags::Z, a == 0);
+        self.set_flag(Flags::N, false);
+        self.set_flag(Flags::H, false);
+        self.set_flag(Flags::C, false);
+    }
+    pub fn add_a_u8(&mut self, val: u8, adc: bool) {
+        let mut carry = 0;
+        if adc && self.get_flag(Flags::C) {
+            carry = 1;
+        }
+        let a = self.get_r8(Regs8::A);
+        let result1 = a.overflowing_add(val);
+        let h_check1 = check_h_carry_u8(a, val);
+        let result2 = result1.0.overflowing_add(carry);
+        let h_check2 = check_h_carry_u8(result1.0, carry);
+        let set_h = h_check1 || h_check2;
+        let set_c = result1.1 || result2.1;
+
+        self.set_flag(Flags::N, false);
+        self.set_flag(Flags::C, set_c);
+        self.set_flag(Flags::H, set_h);
+        self.set_flag(Flags::Z, result2.0 == 0);
+        self.set_r8(Regs8::A, result2.0);
+    }
+    pub fn sub_a_u8(&mut self, val: u8, sbc: bool) {
+        let mut carry = 0;
+        if sbc && self.get_flag(Flags::C) {
+            carry = 1;
+        }
+        let a = self.get_r8(Regs8::A);
+        let result1 = a.overflowing_sub(val);
+        let check_h1 = check_h_borrow_u8(a, val);
+        let result2 = result1.0.overflowing_sub(carry);
+        let check_h2 = check_h_borrow_u8(result1.0, carry);
+        let set_h = check_h1 || check_h2;
+
+        self.set_flag(Flags::N, true);
+        self.set_flag(Flags::Z, result2.0 == 0);
+        self.set_flag(Flags::H, set_h);
+        self.set_flag(Flags::C, result1.1 || result2.1);
+        self.set_r8(Regs8::A, result2.0);
+    }
+    pub fn cp_a_u8(&mut self, val: u8) {
+        let a = self.get_r8(Regs8::A);
+        let set_h = check_h_borrow_u8(a, val);
+
+        self.set_flag(Flags::Z, a == val);
+        self.set_flag(Flags::N, true);
+        self.set_flag(Flags::H, set_h);
+        self.set_flag(Flags::C, a < val);
+    }
 
     pub fn get_r16(&self, r: Regs16) -> u16 {
         match r {
@@ -124,6 +197,17 @@ impl Cpu {
         let val = self.get_r16(r);
         let inc = val.wrapping_add(1);
         self.set_r16(r, inc);
+    }
+    pub fn add_r16(&mut self, dst_r: Regs16, src_r: Regs16) {
+        let dst = self.get_r16(dst_r);
+        let src = self.get_r16(src_r);
+        let res = dst.overflowing_add(src);
+        let set_h = check_h_carry_u16(dst, src);
+
+        self.set_r16(dst_r, res.0);
+        self.set_flag(Flags::N, false);
+        self.set_flag(Flags::H, set_h);
+        self.set_flag(Flags::C, res.1);
     }
 
     pub fn get_flag(&self, f: Flags) -> bool {
