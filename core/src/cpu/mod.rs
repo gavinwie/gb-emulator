@@ -1,5 +1,6 @@
 pub mod opcodes;
 use crate::utils::*;
+use crate::bus::Bus;
 pub struct Cpu {
     pc: u16,
     sp: u16,
@@ -13,7 +14,7 @@ pub struct Cpu {
     l: u8,
     irq_enabled: bool,
     halted: bool,
-    // bus: Bus,
+    bus: Bus,
 }
 
 impl Cpu {
@@ -31,7 +32,7 @@ impl Cpu {
             l: 0x00,
             irq_enabled: false,
             halted: false,
-            // bus: Bus::new()
+            bus: Bus::new()
         };
         // Magic values for RAM initialization
         cpu.write_ram(0xFF10, 0x80);
@@ -388,10 +389,10 @@ impl Cpu {
         self.write_ram(self.sp + 1, val.high_byte());
     }
     pub fn read_ram(&self, addr: u16) -> u8 {
-        todo!();
+        self.bus.read_ram(addr)
     }
     pub fn write_ram(&mut self, addr: u16, val: u8) {
-        todo!();
+        self.bus.write_ram(addr, val);
     }
 }
 
