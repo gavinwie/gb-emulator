@@ -58,6 +58,10 @@ impl Cpu {
         cpu
     }
     
+    pub fn load_rom(&mut self, rom: &[u8]) {
+        unimplemented!();
+        // self.bus.load_rom(rom);
+    }
     pub fn tick(&mut self) -> bool {
         let cycles = if self.halted { 1 } else { opcodes::execute(self) };
         false

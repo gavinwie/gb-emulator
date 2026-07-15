@@ -1,3 +1,6 @@
+pub const SCREEN_WIDTH: usize = 160;
+pub const SCREEN_HEIGHT: usize = 144;
+
 pub fn merge_bytes(high: u8, low: u8) -> u16 {
     ((high as u16) << 8) | (low as u16)
 }
