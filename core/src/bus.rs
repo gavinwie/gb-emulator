@@ -1,5 +1,6 @@
 use crate::cart::{Cart, ROM_START, ROM_STOP};
 use crate::ppu::{Ppu, VRAM_START, VRAM_STOP};
+use crate::ppu::PpuUpdateResult;
 pub struct Bus {
     rom: Cart,
     ppu: Ppu,
@@ -46,5 +47,9 @@ impl Bus {
                 self.ram[offset as usize] = val;
             }
         }
+    }
+
+    pub fn update_ppu(&mut self, cycles: u8) -> PpuUpdateResult {
+        return self.ppu.update(cycles)
     }
 }

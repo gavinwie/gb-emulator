@@ -11,22 +11,33 @@ const NUM_TILES: usize    = 384;
 
 const TILE_MAP_SIZE: usize = (TILE_MAP_STOP - TILE_MAP_START + 1) as usize;
 
+pub mod modes;
 mod tile;
 
 use tile::Tile;
+use modes::{Lcd, LcdModeType, LcdResults};
+
+pub struct PpuUpdateResult {
+    pub lcd_result: LcdResults,
+}
 pub struct Ppu {
+    mode: Lcd,
     tiles: [Tile; NUM_TILES],
     maps: [u8; TILE_MAP_SIZE],
 }
-
 impl Ppu {
     pub fn new() -> Self {
         Self {
+            mode: Lcd::new(),
             tiles: [Tile::new(); NUM_TILES],
             maps: [0; TILE_MAP_SIZE]
         }
     }
 
+    pub fn update(&mut self, cycles: u8) -> PpuUpdateResult {
+        let lcd_result = self.mode.step(cycles);
+        PpuUpdateResult{ lcd_result }
+    }
     pub fn read_vram(&self, addr: u16) -> u8 {
         match addr {
             TILE_SET_START..=TILE_SET_STOP => {

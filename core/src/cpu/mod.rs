@@ -1,4 +1,5 @@
 pub mod opcodes;
+use crate::ppu::modes::LcdResults;
 use crate::utils::*;
 use crate::bus::Bus;
 pub struct Cpu {
@@ -64,7 +65,8 @@ impl Cpu {
     }
     pub fn tick(&mut self) -> bool {
         let cycles = if self.halted { 1 } else { opcodes::execute(self) };
-        false
+        let ppu_result = self.bus.update_ppu(cycles);
+        return ppu_result.lcd_result == LcdResults::RenderFrame;
     }
 
     pub fn get_r8(&self, r: Regs8) -> u8 {
