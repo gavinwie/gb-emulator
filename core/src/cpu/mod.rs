@@ -155,6 +155,85 @@ impl Cpu {
         self.set_flag(Flags::H, set_h);
         self.set_flag(Flags::C, a < val);
     }
+    pub fn rotate_left(&mut self, reg: Regs8, carry: bool) {
+        let val = self.get_r8(reg);
+        let msb = val.get_bit(7);
+        let mut new = val.rotate_left(1);
+        if carry {
+            new.set_bit(0, self.get_flag(Flags::C));
+        }
+        self.set_r8(reg, new);
+        self.set_flag(Flags::Z, new == 0);
+        self.set_flag(Flags::N, false);
+        self.set_flag(Flags::H, false);
+        self.set_flag(Flags::C, msb);
+    }
+
+    pub fn rotate_right(&mut self, reg: Regs8, carry: bool) {
+        let val = self.get_r8(reg);
+        let lsb = val.get_bit(0);
+        let mut new = val.rotate_right(1);
+        if carry {
+            new.set_bit(7, self.get_flag(Flags::C));
+        }
+        self.set_r8(reg, new);
+        self.set_flag(Flags::Z, new == 0);
+        self.set_flag(Flags::N, false);
+        self.set_flag(Flags::H, false);
+        self.set_flag(Flags::C, lsb);
+    }
+    pub fn shift_left(&mut self, reg: Regs8) {
+        let val = self.get_r8(reg);
+        let msb = val.get_bit(7);
+        let res = val.wrapping_shl(1);
+
+        self.set_r8(reg, res);
+        self.set_flag(Flags::Z, res == 0);
+        self.set_flag(Flags::N, false);
+        self.set_flag(Flags::H, false);
+        self.set_flag(Flags::C, msb);
+    }
+    pub fn shift_right(&mut self, reg: Regs8, arith: bool) {
+        let val = self.get_r8(reg);
+        let lsb = val.get_bit(0);
+        let msb = val.get_bit(7);
+        let mut res = val.wrapping_shr(1);
+        if arith {
+            res.set_bit(7, msb);
+        }
+
+        self.set_r8(reg, res);
+        self.set_flag(Flags::Z, res == 0);
+        self.set_flag(Flags::N, false);
+        self.set_flag(Flags::H, false);
+        self.set_flag(Flags::C, lsb);
+    }
+    pub fn swap_bits(&mut self, reg: Regs8) {
+        let val = self.get_r8(reg);
+        let low = val & 0xF;
+        let high = (val & 0xF0) >> 4;
+        let res = (low << 4) | high;
+
+        self.set_r8(reg, res);
+        self.set_flag(Flags::Z, res == 0);
+        self.set_flag(Flags::N, false);
+        self.set_flag(Flags::H, false);
+        self.set_flag(Flags::C, false);
+    }
+    pub fn test_bit(&mut self, reg: Regs8, bit: u8) {
+        let byte = self.get_r8(reg);
+        let val = byte.get_bit(bit);
+
+        self.set_flag(Flags::Z, !val);
+        self.set_flag(Flags::N, false);
+        self.set_flag(Flags::H, true);
+    }
+
+    pub fn write_bit(&mut self, reg: Regs8, bit: u8, set: bool) {
+        let mut byte = self.get_r8(reg);
+        byte.set_bit(bit, set);
+        self.set_r8(reg, byte);
+    }
 
     pub fn get_pc(&self) -> u16 {
         self.pc

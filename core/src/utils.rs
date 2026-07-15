@@ -44,3 +44,30 @@ pub fn check_h_borrow_u8(lhs: u8, rhs: u8) -> bool {
 pub fn check_h_borrow_u16(lhs: u16, rhs: u16) -> bool {
     (lhs & 0xFFF).checked_sub(rhs & 0xFFF).is_none()
 }
+pub trait BitOps {
+    fn get_bit(&self, bit: u8) -> bool;
+    fn set_bit(&mut self, bit: u8, set: bool);
+}
+
+macro_rules! impl_bitops {
+    ($T:ty) => {
+        impl BitOps for $T {
+            fn get_bit(&self, bit: u8) -> bool {
+                let mask = 0b1 << bit;
+                (self & mask) != 0
+            }
+
+            fn set_bit(&mut self, bit: u8, set: bool) {
+                let mask = 0b1 << bit;
+                if set {
+                    *self |= mask;
+                } else {
+                    *self &= !mask;
+                }
+            }
+        }
+    }
+}
+
+impl_bitops!(u8);
+impl_bitops!(u16);
