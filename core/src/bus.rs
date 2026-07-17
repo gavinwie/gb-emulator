@@ -1,6 +1,7 @@
 use crate::cart::{Cart, ROM_START, ROM_STOP};
-use crate::ppu::{Ppu, VRAM_START, VRAM_STOP};
+use crate::ppu::{Ppu, VRAM_START, VRAM_STOP, LCD_REG_START, LCD_REG_STOP};
 use crate::ppu::PpuUpdateResult;
+
 pub struct Bus {
     rom: Cart,
     ppu: Ppu,
@@ -28,6 +29,9 @@ impl Bus {
             VRAM_START..=VRAM_STOP => {
                 self.ppu.read_vram(addr)
             },
+            LCD_REG_START..=LCD_REG_STOP => {
+                self.ppu.read_lcd_reg(addr)
+            },
             _ => {
                 let offset = addr - ROM_STOP - 1;
                 self.ram[offset as usize]
@@ -41,6 +45,9 @@ impl Bus {
             },
             VRAM_START..=VRAM_STOP => {
                 self.ppu.write_vram(addr, val);
+            },
+            LCD_REG_START..=LCD_REG_STOP => {
+                self.ppu.write_lcd_reg(addr, val)
             },
             _ => {
                 let offset = addr - ROM_STOP - 1;

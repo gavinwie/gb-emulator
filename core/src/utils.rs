@@ -74,3 +74,31 @@ macro_rules! impl_bitops {
 
 impl_bitops!(u8);
 impl_bitops!(u16);
+
+pub struct Point {
+    pub x: u8,
+    pub y: u8,
+}
+
+impl Point {
+    pub fn new(x: u8, y: u8) -> Self {
+        Point{x, y}
+    }
+}
+
+pub fn unpack_u8(val: u8) -> [u8; 4] {
+    let mut output = [0; 4];
+    output[0] = val & 0b0000_0011;
+    output[1] = (val & 0b0000_1100) >> 2;
+    output[2] = (val & 0b0011_0000) >> 4;
+    output[3] = (val & 0b1100_0000) >> 6;
+    return output;
+}
+
+pub fn pack_u8(a: &[u8]) -> u8 {
+    let mut output = a[0];
+    output |= a[1] << 2;
+    output |= a[2] << 4;
+    output |= a[3] << 6;
+    return output;
+}
