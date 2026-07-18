@@ -21,16 +21,16 @@ pub struct Cpu {
 impl Cpu {
     pub fn new() -> Self {
         let mut cpu = Self {
-            pc: 0x0000,
-            sp: 0x0000,
-            a: 0x00,
+            pc: 0x0100,
+            sp: 0xFFFE,
+            a: 0x01,
             b: 0x00,
-            c: 0x00,
+            c: 0x13,
             d: 0x00,
-            e: 0x00,
-            f: 0x00,
-            h: 0x00,
-            l: 0x00,
+            e: 0xD8,
+            f: 0xB0,
+            h: 0x01,
+            l: 0x4D,
             irq_enabled: false,
             halted: false,
             bus: Bus::new()
@@ -60,8 +60,7 @@ impl Cpu {
     }
     
     pub fn load_rom(&mut self, rom: &[u8]) {
-        unimplemented!();
-        // self.bus.load_rom(rom);
+        self.bus.load_rom(rom);
     }
     pub fn tick(&mut self) -> bool {
         let mut draw_time = false;
@@ -81,6 +80,9 @@ impl Cpu {
             self.trigger_irq(irq);
         }
         draw_time
+    }
+    pub fn render(&self) -> [u8; DISPLAY_BUFFER] {
+        self.bus.render()
     }
 
     pub fn get_r8(&self, r: Regs8) -> u8 {

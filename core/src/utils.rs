@@ -1,6 +1,15 @@
 pub const SCREEN_WIDTH: usize = 160;
 pub const SCREEN_HEIGHT: usize = 144;
 
+pub const DISPLAY_BUFFER: usize = SCREEN_WIDTH * SCREEN_HEIGHT * 4;
+
+pub const GB_PALETTE: [[u8; 4]; 4] = [
+    [255, 255, 255, 255],
+    [128, 128, 128, 255],
+    [64,  64,  64,  255],
+    [0,   0,   0,   255],
+];
+
 pub fn merge_bytes(high: u8, low: u8) -> u16 {
     ((high as u16) << 8) | (low as u16)
 }

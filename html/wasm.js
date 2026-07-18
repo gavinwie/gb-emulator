@@ -1,5 +1,7 @@
 /* @ts-self-types="./wasm.d.ts" */
 
+//#region exports
+
 export class GB {
     __destroy_into_raw() {
         const ptr = this.__wbg_ptr;
@@ -11,10 +13,17 @@ export class GB {
         const ptr = this.__destroy_into_raw();
         wasm.__wbg_gb_free(ptr, 0);
     }
+    draw_screen() {
+        if (this.__wbg_ptr == 0) throw new Error('Attempt to use a moved value');
+        _assertNum(this.__wbg_ptr);
+        wasm.gb_draw_screen(this.__wbg_ptr);
+    }
     /**
      * @param {Uint8Array} data
      */
     load_rom(data) {
+        if (this.__wbg_ptr == 0) throw new Error('Attempt to use a moved value');
+        _assertNum(this.__wbg_ptr);
         wasm.gb_load_rom(this.__wbg_ptr, data);
     }
     constructor() {
@@ -26,8 +35,21 @@ export class GB {
         GBFinalization.register(this, this.__wbg_ptr, this);
         return this;
     }
+    /**
+     * @returns {boolean}
+     */
+    tick() {
+        if (this.__wbg_ptr == 0) throw new Error('Attempt to use a moved value');
+        _assertNum(this.__wbg_ptr);
+        const ret = wasm.gb_tick(this.__wbg_ptr);
+        return ret !== 0;
+    }
 }
 if (Symbol.dispose) GB.prototype[Symbol.dispose] = GB.prototype.free;
+
+//#endregion
+
+//#region wasm imports
 function __wbg_get_imports() {
     const import0 = {
         __proto__: null,
@@ -40,32 +62,35 @@ function __wbg_get_imports() {
         },
         __wbg___wbindgen_is_undefined_c05833b95a3cf397: function(arg0) {
             const ret = arg0 === undefined;
+            _assertBoolean(ret);
             return ret;
         },
         __wbg___wbindgen_throw_344f42d3211c4765: function(arg0, arg1) {
             throw new Error(getStringFromWasm0(arg0, arg1));
         },
-        __wbg_byteLength_41862ca4020b9c43: function(arg0) {
+        __wbg_byteLength_41862ca4020b9c43: function() { return logError(function (arg0) {
             const ret = arg0.byteLength;
+            _assertNum(ret);
             return ret;
-        },
-        __wbg_document_179650d6cb13c263: function(arg0) {
+        }, arguments); },
+        __wbg_document_179650d6cb13c263: function() { return logError(function (arg0) {
             const ret = arg0.document;
             return isLikeNone(ret) ? 0 : addToExternrefTable0(ret);
-        },
+        }, arguments); },
         __wbg_getContext_e79ddf6a9cb3cc76: function() { return handleError(function (arg0, arg1, arg2) {
             const ret = arg0.getContext(getStringFromWasm0(arg1, arg2));
             return isLikeNone(ret) ? 0 : addToExternrefTable0(ret);
         }, arguments); },
-        __wbg_getElementById_1cbd8f06dbe8eb8e: function(arg0, arg1, arg2) {
+        __wbg_getElementById_1cbd8f06dbe8eb8e: function() { return logError(function (arg0, arg1, arg2) {
             const ret = arg0.getElementById(getStringFromWasm0(arg1, arg2));
             return isLikeNone(ret) ? 0 : addToExternrefTable0(ret);
-        },
-        __wbg_get_index_e68b01fac18aa799: function(arg0, arg1) {
+        }, arguments); },
+        __wbg_get_index_e68b01fac18aa799: function() { return logError(function (arg0, arg1) {
             const ret = arg0[arg1 >>> 0];
+            _assertNum(ret);
             return ret;
-        },
-        __wbg_instanceof_CanvasRenderingContext2d_2284b703b7023dcc: function(arg0) {
+        }, arguments); },
+        __wbg_instanceof_CanvasRenderingContext2d_2284b703b7023dcc: function() { return logError(function (arg0) {
             let result;
             try {
                 result = arg0 instanceof CanvasRenderingContext2D;
@@ -73,9 +98,10 @@ function __wbg_get_imports() {
                 result = false;
             }
             const ret = result;
+            _assertBoolean(ret);
             return ret;
-        },
-        __wbg_instanceof_HtmlCanvasElement_ed02ed9136056019: function(arg0) {
+        }, arguments); },
+        __wbg_instanceof_HtmlCanvasElement_ed02ed9136056019: function() { return logError(function (arg0) {
             let result;
             try {
                 result = arg0 instanceof HTMLCanvasElement;
@@ -83,9 +109,10 @@ function __wbg_get_imports() {
                 result = false;
             }
             const ret = result;
+            _assertBoolean(ret);
             return ret;
-        },
-        __wbg_instanceof_Window_05ba1ee4f6781663: function(arg0) {
+        }, arguments); },
+        __wbg_instanceof_Window_05ba1ee4f6781663: function() { return logError(function (arg0) {
             let result;
             try {
                 result = arg0 instanceof Window;
@@ -93,24 +120,32 @@ function __wbg_get_imports() {
                 result = false;
             }
             const ret = result;
+            _assertBoolean(ret);
             return ret;
-        },
-        __wbg_static_accessor_GLOBAL_4ef717fb391d88b7: function() {
+        }, arguments); },
+        __wbg_new_with_u8_clamped_array_and_sh_2767e4741c267d25: function() { return handleError(function (arg0, arg1, arg2, arg3) {
+            const ret = new ImageData(getClampedArrayU8FromWasm0(arg0, arg1), arg2 >>> 0, arg3 >>> 0);
+            return ret;
+        }, arguments); },
+        __wbg_putImageData_a4dee11e08ab9ac8: function() { return handleError(function (arg0, arg1, arg2, arg3) {
+            arg0.putImageData(arg1, arg2, arg3);
+        }, arguments); },
+        __wbg_static_accessor_GLOBAL_4ef717fb391d88b7: function() { return logError(function () {
             const ret = typeof global === 'undefined' ? null : global;
             return isLikeNone(ret) ? 0 : addToExternrefTable0(ret);
-        },
-        __wbg_static_accessor_GLOBAL_THIS_8d1badc68b5a74f4: function() {
+        }, arguments); },
+        __wbg_static_accessor_GLOBAL_THIS_8d1badc68b5a74f4: function() { return logError(function () {
             const ret = typeof globalThis === 'undefined' ? null : globalThis;
             return isLikeNone(ret) ? 0 : addToExternrefTable0(ret);
-        },
-        __wbg_static_accessor_SELF_146583524fe1469b: function() {
+        }, arguments); },
+        __wbg_static_accessor_SELF_146583524fe1469b: function() { return logError(function () {
             const ret = typeof self === 'undefined' ? null : self;
             return isLikeNone(ret) ? 0 : addToExternrefTable0(ret);
-        },
-        __wbg_static_accessor_WINDOW_f2829a2234d7819e: function() {
+        }, arguments); },
+        __wbg_static_accessor_WINDOW_f2829a2234d7819e: function() { return logError(function () {
             const ret = typeof window === 'undefined' ? null : window;
             return isLikeNone(ret) ? 0 : addToExternrefTable0(ret);
-        },
+        }, arguments); },
         __wbindgen_init_externref_table: function() {
             const table = wasm.__wbindgen_externrefs;
             const offset = table.grow(4);
@@ -127,14 +162,28 @@ function __wbg_get_imports() {
     };
 }
 
+
+//#endregion
 const GBFinalization = (typeof FinalizationRegistry === 'undefined')
     ? { register: () => {}, unregister: () => {} }
     : new FinalizationRegistry(ptr => wasm.__wbg_gb_free(ptr, 1));
 
+
+//#region intrinsics
 function addToExternrefTable0(obj) {
     const idx = wasm.__externref_table_alloc();
     wasm.__wbindgen_externrefs.set(idx, obj);
     return idx;
+}
+
+function _assertBoolean(n) {
+    if (typeof(n) !== 'boolean') {
+        throw new Error(`expected a boolean argument, found ${typeof(n)}`);
+    }
+}
+
+function _assertNum(n) {
+    if (typeof(n) !== 'number') throw new Error(`expected a number argument, found ${typeof(n)}`);
 }
 
 function debugString(val) {
@@ -202,6 +251,11 @@ function debugString(val) {
     return className;
 }
 
+function getClampedArrayU8FromWasm0(ptr, len) {
+    ptr = ptr >>> 0;
+    return getUint8ClampedArrayMemory0().subarray(ptr / 1, ptr / 1 + len);
+}
+
 let cachedDataViewMemory0 = null;
 function getDataViewMemory0() {
     if (cachedDataViewMemory0 === null || cachedDataViewMemory0.buffer.detached === true || (cachedDataViewMemory0.buffer.detached === undefined && cachedDataViewMemory0.buffer !== wasm.memory.buffer)) {
@@ -222,6 +276,14 @@ function getUint8ArrayMemory0() {
     return cachedUint8ArrayMemory0;
 }
 
+let cachedUint8ClampedArrayMemory0 = null;
+function getUint8ClampedArrayMemory0() {
+    if (cachedUint8ClampedArrayMemory0 === null || cachedUint8ClampedArrayMemory0.byteLength === 0) {
+        cachedUint8ClampedArrayMemory0 = new Uint8ClampedArray(wasm.memory.buffer);
+    }
+    return cachedUint8ClampedArrayMemory0;
+}
+
 function handleError(f, args) {
     try {
         return f.apply(this, args);
@@ -235,7 +297,24 @@ function isLikeNone(x) {
     return x === undefined || x === null;
 }
 
+function logError(f, args) {
+    try {
+        return f.apply(this, args);
+    } catch (e) {
+        let error = (function () {
+            try {
+                return e instanceof Error ? `${e.message}\n\nStack:\n${e.stack}` : e.toString();
+            } catch(_) {
+                return "<failed to stringify thrown value>";
+            }
+        }());
+        console.error("wasm-bindgen: imported JS function that was not marked as `catch` threw an error:", error);
+        throw e;
+    }
+}
+
 function passStringToWasm0(arg, malloc, realloc) {
+    if (typeof(arg) !== 'string') throw new Error(`expected a string argument, found ${typeof(arg)}`);
     if (realloc === undefined) {
         const buf = cachedTextEncoder.encode(arg);
         const ptr = malloc(buf.length, 1) >>> 0;
@@ -263,7 +342,7 @@ function passStringToWasm0(arg, malloc, realloc) {
         ptr = realloc(ptr, len, len = offset + arg.length * 3, 1) >>> 0;
         const view = getUint8ArrayMemory0().subarray(ptr + offset, ptr + len);
         const ret = cachedTextEncoder.encodeInto(arg, view);
-
+        if (ret.read !== arg.length) throw new Error('failed to pass whole string');
         offset += ret.written;
         ptr = realloc(ptr, len, offset, 1) >>> 0;
     }
@@ -307,6 +386,10 @@ if (!('encodeInto' in cachedTextEncoder)) {
 
 let WASM_VECTOR_LEN = 0;
 
+
+//#endregion
+
+//#region wasm loading
 let wasmModule, wasmInstance, wasm;
 function __wbg_finalize_init(instance, module) {
     wasmInstance = instance;
@@ -314,6 +397,7 @@ function __wbg_finalize_init(instance, module) {
     wasmModule = module;
     cachedDataViewMemory0 = null;
     cachedUint8ArrayMemory0 = null;
+    cachedUint8ClampedArrayMemory0 = null;
     wasm.__wbindgen_start();
     return wasm;
 }
@@ -400,3 +484,5 @@ async function __wbg_init(module_or_path) {
 }
 
 export { initSync, __wbg_init as default };
+//#endregion
+export { wasm as __wasm }

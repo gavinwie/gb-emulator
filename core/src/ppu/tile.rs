@@ -36,4 +36,8 @@ impl Tile {
             self.pixels[row][7 - i].set_bit(bit, val.get_bit(i as u8))
         }
     }
+
+    pub fn get_row(&self, row: u8) -> [u8; 8] {
+        self.pixels[row as usize]
+    }
 }

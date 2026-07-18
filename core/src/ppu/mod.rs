@@ -1,4 +1,4 @@
-use crate::utils::{self, Point, unpack_u8};
+use crate::utils::{self, DISPLAY_BUFFER, GB_PALETTE, Point, SCREEN_HEIGHT, SCREEN_WIDTH, unpack_u8};
 use crate::utils::BitOps;
 
 pub const VRAM_START: u16   = 0x8000;
@@ -12,7 +12,12 @@ const TILE_MAP_STOP: u16    = 0x9FFF;
 const BYTES_PER_TILE: u16 = 16;
 const NUM_TILES: usize    = 384;
 
+const NUM_TILE_COLS: usize = SCREEN_WIDTH / 8;
+const NUM_TILE_ROWS: usize = SCREEN_HEIGHT / 8;
+const LAYER_WIDTH: usize   = 32;
+
 const TILE_MAP_SIZE: usize = (TILE_MAP_STOP - TILE_MAP_START + 1) as usize;
+const TILE_MAP_TABLE_SIZE: usize = TILE_MAP_SIZE / 2;
 
 pub const LCD_REG_START: u16    = 0xFF40;
 pub const LCD_REG_STOP: u16     = 0xFF4B;
@@ -108,6 +113,51 @@ impl Ppu {
         self.write_lcd_reg(STAT, stat);
 
         PpuUpdateResult{ lcd_result, irq }
+    }
+    pub fn render(&self) -> [u8; DISPLAY_BUFFER] {
+        let mut result = [0xFF; DISPLAY_BUFFER];
+
+        if self.is_bg_layer_displayed() {
+            self.render_bg(&mut result);
+        }
+
+        return result;
+    }
+    fn render_bg(&self, buffer: &mut [u8]) {
+        let map_offset = self.get_bg_tile_map_index() as usize * TILE_MAP_TABLE_SIZE;
+        let palette = self.get_bg_palette();
+        // Iterate over each screen row and column
+        for ty in 0..NUM_TILE_ROWS {
+            for tx in 0..NUM_TILE_COLS {
+                // Get the appropriate pixel data for that spot
+                let map_num = ty * LAYER_WIDTH + tx;
+                let tile_index = self.maps[map_offset + map_num] as usize;
+                // Calculate the correct tile index if needed
+                let adjusted_tile_index = if self.get_bg_wndw_tile_set_index() == 1 {
+                    tile_index as usize
+                } else {
+                    (256 + tile_index as i8 as isize) as usize
+                };
+                let tile = self.tiles[adjusted_tile_index];
+                // Iterate over each pixel
+                for y in 0..8 {
+                    let row = tile.get_row(y);
+                    let pixel_y = 8 * ty + y as usize;
+                    for x in 0..8 {
+                        // Use the palette table to get the right RGBA value
+                        let pixel_x = 8 * tx + x;
+                        let cell = row[x];
+                        let color_idx = palette[cell as usize];
+                        let color = GB_PALETTE[color_idx as usize];
+                        // Copy the RGBA channels into the right spot in the buffer
+                        let buffer_idx = 4 * (pixel_y * SCREEN_WIDTH + pixel_x);
+                        for i in 0..4 {
+                            buffer[buffer_idx + i] = color[i];
+                        }
+                    }
+                }
+            }
+        }
     }
     pub fn read_vram(&self, addr: u16) -> u8 {
         match addr {
