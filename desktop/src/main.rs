@@ -11,6 +11,10 @@ use std::time::Duration;
 use std::env;
 use std::fs::File;
 use std::io::Read;
+use std::process::exit;
+use crate::debug::Debugger;
+
+mod debug;
 
 const SCALE: u32 = 3;
 const WINDOW_WIDTH: u32 = (SCREEN_WIDTH as u32) * SCALE;
@@ -23,6 +27,8 @@ fn main() {
             println!("Please specify a ROM location: cargo run path/to/game");
             return;
         }
+
+    let mut gbd = Debugger::new();
     let mut gb = Cpu::new();
     let filename = &args[1];
     let rom = load_rom(filename);
@@ -44,12 +50,15 @@ fn main() {
                 Event::KeyDown{keycode: Some(Keycode::Escape), ..} => {
                     break 'gameloop;
                 },
+                Event::KeyDown{keycode: Some(Keycode::Space), ..} => {
+                    gbd.set_debugging(true);
+                },
                 _ => {}
             }
         }
 
         // Keep ticking until told to stop
-        while !gb.tick() {}
+        tick_until_draw(&mut gb, &mut gbd);
         let frame = gb.render();
         draw_screen(&frame, &mut canvas);
     }
@@ -74,4 +83,22 @@ fn draw_screen(data: &[u8], canvas: &mut Canvas<Window>) {
         canvas.fill_rect(rect).unwrap();
     }
     canvas.present();
+}
+fn tick_until_draw(gb: &mut Cpu, gbd: &mut Debugger) {
+    loop {
+        let render = gb.tick();
+
+        gbd.check_breakpoints(gb.get_pc());
+        if gbd.is_debugging() {
+            gbd.print_info();
+            let quit = gbd.debugloop(gb);
+            if quit {
+                exit(0);
+            }
+        }
+
+        if render {
+            break;
+        }
+    }
 }
