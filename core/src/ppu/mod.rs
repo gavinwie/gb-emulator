@@ -19,6 +19,10 @@ const LAYER_WIDTH: usize   = 32;
 const TILE_MAP_SIZE: usize = (TILE_MAP_STOP - TILE_MAP_START + 1) as usize;
 const TILE_MAP_TABLE_SIZE: usize = TILE_MAP_SIZE / 2;
 
+const TILESIZE: usize   = 8;
+const LAYERSIZE: usize  = 32;
+const MAP_PIXELS: usize = TILESIZE * LAYERSIZE;
+
 pub const LCD_REG_START: u16    = 0xFF40;
 pub const LCD_REG_STOP: u16     = 0xFF4B;
 const LCD_REG_SIZE: usize = (LCD_REG_STOP - LCD_REG_START + 1) as usize;
@@ -126,35 +130,30 @@ impl Ppu {
     fn render_bg(&self, buffer: &mut [u8]) {
         let map_offset = self.get_bg_tile_map_index() as usize * TILE_MAP_TABLE_SIZE;
         let palette = self.get_bg_palette();
-        // Iterate over each screen row and column
-        for ty in 0..NUM_TILE_ROWS {
-            for tx in 0..NUM_TILE_COLS {
-                // Get the appropriate pixel data for that spot
-                let map_num = ty * LAYER_WIDTH + tx;
+        let viewport = self.get_viewport_coords();
+        for py in 0..SCREEN_HEIGHT {
+            let current_y = viewport.y as usize + py as usize;
+            let y = current_y % MAP_PIXELS;
+            let row = current_y % TILESIZE;
+            for px in 0..SCREEN_WIDTH {
+                let current_x = viewport.x as usize + px as usize;
+                let x = current_x % MAP_PIXELS;
+                let col = current_x % TILESIZE;
+                let map_num = (y / TILESIZE) * LAYERSIZE + (x / TILESIZE);
                 let tile_index = self.maps[map_offset + map_num] as usize;
-                // Calculate the correct tile index if needed
                 let adjusted_tile_index = if self.get_bg_wndw_tile_set_index() == 1 {
                     tile_index as usize
                 } else {
                     (256 + tile_index as i8 as isize) as usize
                 };
                 let tile = self.tiles[adjusted_tile_index];
-                // Iterate over each pixel
-                for y in 0..8 {
-                    let row = tile.get_row(y);
-                    let pixel_y = 8 * ty + y as usize;
-                    for x in 0..8 {
-                        // Use the palette table to get the right RGBA value
-                        let pixel_x = 8 * tx + x;
-                        let cell = row[x];
-                        let color_idx = palette[cell as usize];
-                        let color = GB_PALETTE[color_idx as usize];
-                        // Copy the RGBA channels into the right spot in the buffer
-                        let buffer_idx = 4 * (pixel_y * SCREEN_WIDTH + pixel_x);
-                        for i in 0..4 {
-                            buffer[buffer_idx + i] = color[i];
-                        }
-                    }
+                let data = tile.get_row(row as u8);
+                let cell = data[col];
+                let color_idx = palette[cell as usize];
+                let color = GB_PALETTE[color_idx as usize];
+                let buffer_idx = 4 * (py * SCREEN_WIDTH + px);
+                for i in 0..4 {
+                    buffer[buffer_idx + i] = color[i];
                 }
             }
         }
