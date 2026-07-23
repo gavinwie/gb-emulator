@@ -125,6 +125,10 @@ impl Ppu {
             self.render_bg(&mut result);
         }
 
+        if self.is_window_layer_displayed() {
+            self.render_window(&mut result);
+        }
+
         return result;
     }
     fn render_bg(&self, buffer: &mut [u8]) {
@@ -152,6 +156,36 @@ impl Ppu {
                 let color_idx = palette[cell as usize];
                 let color = GB_PALETTE[color_idx as usize];
                 let buffer_idx = 4 * (py * SCREEN_WIDTH + px);
+                for i in 0..4 {
+                    buffer[buffer_idx + i] = color[i];
+                }
+            }
+        }
+    }
+    fn render_window(&self, buffer: &mut [u8]) {
+        let map_offset = self.get_wndw_tile_map_index() as usize * TILE_MAP_TABLE_SIZE;
+        let palette = self.get_bg_palette();
+        let coords = self.get_window_coords();
+        if (coords.x as usize > SCREEN_WIDTH) || (coords.y as usize > SCREEN_HEIGHT) {
+            return;
+        }
+        for y in (coords.y as usize)..SCREEN_HEIGHT {
+            let row = y % TILESIZE;
+            for x in (coords.x as usize)..SCREEN_WIDTH {
+                let col = x % TILESIZE;
+                let map_num = (y / TILESIZE) * LAYERSIZE + (x / TILESIZE);
+                let tile_index = self.maps[map_offset + map_num] as usize;
+                let adjusted_tile_index = if self.get_bg_wndw_tile_set_index() == 1 {
+                    tile_index as usize
+                } else {
+                    (256 + tile_index as i8 as isize) as usize
+                };
+                let tile = self.tiles[adjusted_tile_index];
+                let data = tile.get_row(row as u8);
+                let cell = data[col];
+                let color_idx = palette[cell as usize];
+                let color = GB_PALETTE[color_idx as usize];
+                let buffer_idx = 4 * (y * SCREEN_WIDTH + x);
                 for i in 0..4 {
                     buffer[buffer_idx + i] = color[i];
                 }
