@@ -18,6 +18,14 @@ async function run() {
     await init()
     let gb = new wasm.GB()
 
+    document.addEventListener("keydown", function(e) {
+        gb.press_button(e, true)
+    })
+
+    document.addEventListener("keyup", function(e) {
+        gb.press_button(e, false)
+    })
+
     document.getElementById("fileinput").addEventListener("change", function (e) {
         // Stop previous game from rendering, if one exists
         if (anim_frame != 0) {

@@ -1,10 +1,10 @@
 // In wasm/src/lib.rs
 
-use gb_core::{cpu::Cpu, utils::{SCREEN_HEIGHT, SCREEN_WIDTH}};
+use gb_core::{cpu::Cpu, io::Buttons, utils::{SCREEN_HEIGHT, SCREEN_WIDTH}};
 
 use js_sys::Uint8Array;
 use wasm_bindgen::{Clamped, prelude::*};
-use web_sys::{CanvasRenderingContext2d, HtmlCanvasElement, ImageData};
+use web_sys::{CanvasRenderingContext2d, HtmlCanvasElement, ImageData, KeyboardEvent};
 
 #[wasm_bindgen]
 pub struct GB {
@@ -55,4 +55,25 @@ impl GB {
         }
         self.cpu.load_rom(&rom);
     }
+    #[wasm_bindgen]
+    pub fn press_button(&mut self, event: KeyboardEvent, pressed: bool) {
+        let key = event.key();
+        if let Some(button) = key2btn(&key) {
+            self.cpu.press_button(button, pressed);
+        }
+    }
 }
+
+fn key2btn(key: &str) -> Option<Buttons> {
+        match key {
+            "ArrowDown" =>    { Some(Buttons::Down)   },
+            "ArrowUp" =>      { Some(Buttons::Up)     },
+            "ArrowRight" =>   { Some(Buttons::Right)  },
+            "ArrowLeft" =>    { Some(Buttons::Left)   },
+            "Enter" =>        { Some(Buttons::Start)  },
+            "Backspace" =>    { Some(Buttons::Select) },
+            "x" =>            { Some(Buttons::A)      },
+            "z" =>            { Some(Buttons::B)      },
+            _ =>              { None                  }
+        }
+    }

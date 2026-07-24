@@ -1,3 +1,4 @@
+use gb_core::io::Buttons;
 use gb_core::utils::{DISPLAY_BUFFER, SCREEN_HEIGHT, SCREEN_WIDTH};
 use gb_core::cpu::Cpu;
 use sdl2::event::Event;
@@ -53,6 +54,16 @@ fn main() {
                 Event::KeyDown{keycode: Some(Keycode::Space), ..} => {
                     gbd.set_debugging(true);
                 },
+                Event::KeyDown{keycode: Some(keycode), ..} => {
+                    if let Some(button) = key2btn(keycode) {
+                        gb.press_button(button, true);
+                    }
+                },
+                Event::KeyUp{keycode: Some(keycode), ..} => {
+                    if let Some(button) = key2btn(keycode) {
+                        gb.press_button(button, false);
+                    }
+                },
                 _ => {}
             }
         }
@@ -100,5 +111,19 @@ fn tick_until_draw(gb: &mut Cpu, gbd: &mut Debugger) {
         if render {
             break;
         }
+    }
+}
+
+fn key2btn(key: Keycode) -> Option<Buttons> {
+    match key {
+        Keycode::Down =>        { Some(Buttons::Down)   },
+        Keycode::Up =>          { Some(Buttons::Up)     },
+        Keycode::Left =>        { Some(Buttons::Left)   },
+        Keycode::Right =>       { Some(Buttons::Right)  },
+        Keycode::Return =>      { Some(Buttons::Start)  },
+        Keycode::Backspace =>   { Some(Buttons::Select) },
+        Keycode::X =>           { Some(Buttons::A)      },
+        Keycode::Z =>           { Some(Buttons::B)      },
+        _ =>                    { None                  }
     }
 }

@@ -1,4 +1,5 @@
 pub mod opcodes;
+use crate::io::Buttons;
 use crate::ppu::modes::LcdResults;
 use crate::utils::*;
 use crate::bus::Bus;
@@ -458,6 +459,11 @@ impl Cpu {
 
             self.enable_irq_type(irq, false);
         }
+    }
+
+    pub fn press_button(&mut self, button: Buttons, pressed: bool) {
+        self.bus.press_button(button, pressed);
+        self.enable_irq_type(Interrupts::Joypad, true);
     }
 }
 
