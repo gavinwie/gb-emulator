@@ -84,6 +84,7 @@ macro_rules! impl_bitops {
 impl_bitops!(u8);
 impl_bitops!(u16);
 
+#[derive(Clone, Copy)]
 pub struct Point {
     pub x: u8,
     pub y: u8,

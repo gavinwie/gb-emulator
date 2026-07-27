@@ -62,6 +62,16 @@ mod tile;
 use tile::Tile;
 use modes::{Lcd, LcdModeType, LcdResults};
 
+mod sprite;
+
+use sprite::Sprite;
+
+pub const OAM_START: u16 = 0xFE00;
+pub const OAM_STOP: u16  = 0xFE9F;
+
+const NUM_OAM_SPRITES: usize = 40;
+const BYTES_PER_SPRITE: u16  = 4;
+
 pub struct PpuUpdateResult {
     pub lcd_result: LcdResults,
     pub irq: bool,
@@ -71,6 +81,7 @@ pub struct Ppu {
     tiles: [Tile; NUM_TILES],
     maps: [u8; TILE_MAP_SIZE],
     lcd_regs: [u8; LCD_REG_SIZE],
+    oam: [Sprite; NUM_OAM_SPRITES],
 }
 impl Ppu {
     pub fn new() -> Self {
@@ -79,6 +90,7 @@ impl Ppu {
             tiles: [Tile::new(); NUM_TILES],
             maps: [0; TILE_MAP_SIZE],
             lcd_regs: [0; LCD_REG_SIZE],
+            oam: [Sprite::new(); NUM_OAM_SPRITES],
         }
     }
 
@@ -233,6 +245,17 @@ impl Ppu {
     pub fn write_lcd_reg(&mut self, addr: u16, val: u8) {
         let relative_addr = addr - LCD_REG_START;
         self.lcd_regs[relative_addr as usize] = val;
+    }
+
+    pub fn read_oam(&self, addr: u16) -> u8 {
+        let relative_addr = addr - OAM_START;
+        let oam_idx = relative_addr / BYTES_PER_SPRITE;
+        self.oam[oam_idx as usize].read_u8(addr)
+    }
+    pub fn write_oam(&mut self, addr: u16, val: u8) {
+        let relative_addr = addr - OAM_START;
+        let oam_idx = relative_addr / BYTES_PER_SPRITE;
+        self.oam[oam_idx as usize].write_u8(addr, val);
     }
 
     fn is_lcd_enabled(&self) -> bool {

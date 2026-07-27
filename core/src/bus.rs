@@ -1,8 +1,11 @@
 use crate::cart::{Cart, ROM_START, ROM_STOP};
-use crate::ppu::{Ppu, VRAM_START, VRAM_STOP, LCD_REG_START, LCD_REG_STOP};
+use crate::ppu::{Ppu, VRAM_START, VRAM_STOP, LCD_REG_START, LCD_REG_STOP, OAM_START, OAM_STOP};
 use crate::io::{IO, Buttons, IO_START, IO_STOP};
 use crate::ppu::PpuUpdateResult;
 use crate::utils::DISPLAY_BUFFER;
+
+
+const OAM_DMA: u16 = 0xFF46;
 
 pub struct Bus {
     rom: Cart,
@@ -33,9 +36,9 @@ impl Bus {
             VRAM_START..=VRAM_STOP => {
                 self.ppu.read_vram(addr)
             },
-            // OAM_START..=OAM_STOP => {
-            //     self.ppu.read_oam(addr)
-            // },
+            OAM_START..=OAM_STOP => {
+                self.ppu.read_oam(addr)
+            },
             IO_START..=IO_STOP => {
                 self.io.read_u8(addr)
             },
@@ -56,13 +59,16 @@ impl Bus {
             VRAM_START..=VRAM_STOP => {
                 self.ppu.write_vram(addr, val);
             },
-            // OAM_START..=OAM_STOP => {
-            //     self.ppu.write_oam(addr, val);
-            // },
+            OAM_START..=OAM_STOP => {
+                self.ppu.write_oam(addr, val);
+            },
             IO_START..=IO_STOP => {
                 self.io.write_u8(addr, val);
             },
             LCD_REG_START..=LCD_REG_STOP => {
+                if addr == OAM_DMA {
+                    self.dma_transfer(val);
+                }
                 self.ppu.write_lcd_reg(addr, val)
             },
             _ => {
@@ -81,5 +87,13 @@ impl Bus {
     }
     pub fn press_button(&mut self, button: Buttons, pressed: bool) {
         self.io.set_button(button, pressed);
+    }
+
+    fn dma_transfer(&mut self, val: u8) {
+        let src = (val as u16) << 8;
+        for i in 0..0xA0 {
+            let val = self.read_ram(src + i);
+            self.write_ram(OAM_START + i, val);
+        }
     }
 }
