@@ -37,7 +37,7 @@ impl Tile {
         }
     }
 
-    pub fn get_row(&self, row: u8) -> [u8; 8] {
+    pub fn get_row(&self, row: usize) -> [u8; 8] {
         self.pixels[row as usize]
     }
 }

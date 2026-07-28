@@ -141,6 +141,10 @@ impl Ppu {
             self.render_window(&mut result);
         }
 
+        if self.is_sprite_layer_displayed() {
+            self.render_sprites(&mut result);
+        }
+
         return result;
     }
     fn render_bg(&self, buffer: &mut [u8]) {
@@ -163,7 +167,7 @@ impl Ppu {
                     (256 + tile_index as i8 as isize) as usize
                 };
                 let tile = self.tiles[adjusted_tile_index];
-                let data = tile.get_row(row as u8);
+                let data = tile.get_row(row);
                 let cell = data[col];
                 let color_idx = palette[cell as usize];
                 let color = GB_PALETTE[color_idx as usize];
@@ -193,7 +197,7 @@ impl Ppu {
                     (256 + tile_index as i8 as isize) as usize
                 };
                 let tile = self.tiles[adjusted_tile_index];
-                let data = tile.get_row(row as u8);
+                let data = tile.get_row(row);
                 let cell = data[col];
                 let color_idx = palette[cell as usize];
                 let color = GB_PALETTE[color_idx as usize];
@@ -204,6 +208,69 @@ impl Ppu {
             }
         }
     }
+
+    fn render_sprites(&self, buffer: &mut [u8]) {
+        let sprites = self.sort_sprites();
+        let bg_palette = self.get_bg_palette();
+        let is_8x16 = self.are_sprites_8x16();
+        for spr in sprites {
+            let height = if is_8x16 { 16 } else { 8 };
+            let palette = self.get_sprite_palette(spr.use_palette1());
+            let coords = spr.get_coords();
+            let behind_bg = spr.get_bg_priority();
+            for y in 0..height {
+                let y_flipped = spr.is_y_flipped();
+                let spr_idx = if is_8x16 {
+                    if (y < 8 && !y_flipped) || (8 < y && y_flipped) {
+                        spr.get_tile_num() & 0xFE
+                    } else {
+                        spr.get_tile_num() | 0x01
+                    }
+                } else {
+                    spr.get_tile_num()
+                };
+                let tile = self.tiles[spr_idx as usize];
+                let screen_y = y + coords.1;
+                if screen_y < 0 || screen_y >= SCREEN_HEIGHT as isize {
+                    continue;
+                }
+                let mut data_y = if spr.is_y_flipped() { 7 - y } else { y };
+                data_y %= 8;
+                let row = tile.get_row(data_y as usize);
+                for x in 0..8 {
+                    let data_x = if spr.is_x_flipped() { 7 - x } else { x };
+                    let cell = row[data_x as usize];
+                    // Continue if pixel is transparent
+                    if cell == 0 {
+                        continue;
+                    }
+                    let screen_x = x + coords.0;
+                    if screen_x < 0 || screen_x >= SCREEN_WIDTH as isize {
+                        continue;
+                    }
+                    let buffer_idx = 4 * (screen_y as usize * SCREEN_WIDTH + screen_x as usize);
+                    let current_rgba = &buffer[buffer_idx..(buffer_idx + 4)];
+                    // If current RGBA value isn't the transparent color, continue
+                    if behind_bg && current_rgba != GB_PALETTE[bg_palette[0] as usize] {
+                        continue;
+                    }
+                    let color_idx = palette[cell as usize];
+                    let color = GB_PALETTE[color_idx as usize];
+                    for i in 0..4 {
+                        buffer[buffer_idx + i] = color[i];
+                    }
+                }
+            }
+        }
+    }
+
+    fn sort_sprites(&self) -> Vec<Sprite> {
+        let mut sprites = self.oam.to_vec();
+        sprites.reverse();
+        sprites.sort_by(|a, b| b.get_coords().0.cmp(&a.get_coords().0));
+        sprites
+    }
+
     pub fn read_vram(&self, addr: u16) -> u8 {
         match addr {
             TILE_SET_START..=TILE_SET_STOP => {
@@ -304,11 +371,11 @@ impl Ppu {
     fn get_bg_palette(&self) -> [u8; 4] {
         unpack_u8(self.read_lcd_reg(BGP))
     }
-    fn get_sprite_palette(&self, index: u8) -> [u8; 4] {
-        match index {
-            0 => { unpack_u8(self.read_lcd_reg(OBP0)) },
-            1 => { unpack_u8(self.read_lcd_reg(OBP1)) },
-            _ => { unreachable!() }
+    fn get_sprite_palette(&self, palette1: bool) -> [u8; 4] {
+        if palette1 {
+             unpack_u8(self.read_lcd_reg(OBP1))
+        } else {
+             unpack_u8(self.read_lcd_reg(OBP0))
         }
     }
 }
