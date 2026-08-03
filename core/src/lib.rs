@@ -4,3 +4,4 @@ pub mod cpu;
 pub mod ppu;
 pub mod utils;
 pub mod io;
+pub mod wram;
