@@ -1,4 +1,5 @@
 use crate::utils::BitOps;
+use crate::timer::*;
 
 pub enum Buttons {
     A       = 0,
@@ -33,6 +34,7 @@ pub struct IO {
     dpad_selected: bool,
     face_selected: bool,
     ram: [u8; IO_SIZE],
+    timer: Timer,
 }
 
 impl IO {
@@ -42,16 +44,27 @@ impl IO {
             dpad_selected: false,
             face_selected: false,
             ram: [0; IO_SIZE],
+            timer: Timer::new(),
         }
     }
 
     pub fn read_u8(&self, addr: u16) -> u8 {
-        if addr == JOYPAD_ADDR {
-            self.read_joypad()
-        } else {
-            let relative_addr = addr - IO_START;
-            self.ram[relative_addr as usize]
+        match addr {
+            DIV..=TAC => {
+                self.timer.read_timer(addr)
+            },
+            JOYPAD_ADDR => {
+                self.read_joypad()
+            },
+            _ => {
+                let relative_addr = addr - IO_START;
+                self.ram[relative_addr as usize]
+            }
         }
+    }
+
+    pub fn update_timer(&mut self, cycles: u8) -> bool {
+        self.timer.tick(cycles)
     }
 
     fn read_joypad(&self) -> u8 {
@@ -81,12 +94,18 @@ impl IO {
     }
 
     pub fn write_u8(&mut self, addr: u16, val: u8) {
-        if addr == JOYPAD_ADDR {
-            self.face_selected = !val.get_bit(FACE_SELECT_BIT);
-            self.dpad_selected = !val.get_bit(DPAD_SELECT_BIT);
-        } else {
-            let relative_addr = addr - IO_START;
-            self.ram[relative_addr as usize] = val;
+        match addr {
+            DIV..=TAC => {
+                self.timer.write_timer(addr, val);
+            },
+            JOYPAD_ADDR => {
+                self.face_selected = !val.get_bit(FACE_SELECT_BIT);
+                self.dpad_selected = !val.get_bit(DPAD_SELECT_BIT);
+            },
+            _ => {
+                let relative_addr = addr - IO_START;
+                self.ram[relative_addr as usize] = val;
+            }
         }
     }
 }
