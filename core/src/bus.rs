@@ -114,4 +114,10 @@ impl Bus {
             self.write_ram(OAM_START + i, val);
         }
     }
+    pub fn update_timer(&mut self, cycles: u8) -> bool {
+        self.io.update_timer(cycles)
+    }
+    pub fn render_scanline(&mut self) {
+        self.ppu.render_scanline();
+    }
 }

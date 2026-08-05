@@ -77,6 +77,7 @@ pub struct PpuUpdateResult {
     pub irq: bool,
 }
 pub struct Ppu {
+    screen_buffer: [u8; DISPLAY_BUFFER],
     mode: Lcd,
     tiles: [Tile; NUM_TILES],
     maps: [u8; TILE_MAP_SIZE],
@@ -86,6 +87,7 @@ pub struct Ppu {
 impl Ppu {
     pub fn new() -> Self {
         Self {
+            screen_buffer: [0; DISPLAY_BUFFER],
             mode: Lcd::new(),
             tiles: [Tile::new(); NUM_TILES],
             maps: [0; TILE_MAP_SIZE],
@@ -131,134 +133,122 @@ impl Ppu {
         PpuUpdateResult{ lcd_result, irq }
     }
     pub fn render(&self) -> [u8; DISPLAY_BUFFER] {
-        let mut result = [0xFF; DISPLAY_BUFFER];
-
-        if self.is_bg_layer_displayed() {
-            self.render_bg(&mut result);
+        if self.is_lcd_enabled() {
+            self.screen_buffer
+        } else {
+            [0; DISPLAY_BUFFER]
         }
-
-        if self.is_window_layer_displayed() {
-            self.render_window(&mut result);
-        }
-
-        if self.is_sprite_layer_displayed() {
-            self.render_sprites(&mut result);
-        }
-
-        return result;
     }
-    fn render_bg(&self, buffer: &mut [u8]) {
+    fn render_bg(&self, buffer: &mut [u8], line: u8) {
         let map_offset = self.get_bg_tile_map_index() as usize * TILE_MAP_TABLE_SIZE;
         let palette = self.get_bg_palette();
         let viewport = self.get_viewport_coords();
-        for py in 0..SCREEN_HEIGHT {
-            let current_y = viewport.y as usize + py as usize;
-            let y = current_y % MAP_PIXELS;
-            let row = current_y % TILESIZE;
-            for px in 0..SCREEN_WIDTH {
-                let current_x = viewport.x as usize + px as usize;
-                let x = current_x % MAP_PIXELS;
-                let col = current_x % TILESIZE;
-                let map_num = (y / TILESIZE) * LAYERSIZE + (x / TILESIZE);
-                let tile_index = self.maps[map_offset + map_num] as usize;
-                let adjusted_tile_index = if self.get_bg_wndw_tile_set_index() == 1 {
-                    tile_index as usize
-                } else {
-                    (256 + tile_index as i8 as isize) as usize
-                };
-                let tile = self.tiles[adjusted_tile_index];
-                let data = tile.get_row(row);
-                let cell = data[col];
-                let color_idx = palette[cell as usize];
-                let color = GB_PALETTE[color_idx as usize];
-                let buffer_idx = 4 * (py * SCREEN_WIDTH + px);
-                for i in 0..4 {
-                    buffer[buffer_idx + i] = color[i];
-                }
+        let current_y = viewport.y as usize + line as usize;
+        let y = current_y % MAP_PIXELS;
+        let row = current_y % TILESIZE;
+        for px in 0..SCREEN_WIDTH {
+            let current_x = viewport.x as usize + px as usize;
+            let x = current_x % MAP_PIXELS;
+            let col = current_x % TILESIZE;
+            let map_num = (y / TILESIZE) * LAYERSIZE + (x / TILESIZE);
+            let tile_index = self.maps[map_offset + map_num] as usize;
+            let adjusted_tile_index = if self.get_bg_wndw_tile_set_index() == 1 {
+                tile_index as usize
+            } else {
+                (256 + tile_index as i8 as isize) as usize
+            };
+            let tile = self.tiles[adjusted_tile_index];
+            let data = tile.get_row(row);
+            let cell = data[col];
+            let color_idx = palette[cell as usize];
+            let color = GB_PALETTE[color_idx as usize];
+            for i in 0..4 {
+                buffer[4 * px + i] = color[i];
             }
         }
     }
-    fn render_window(&self, buffer: &mut [u8]) {
+    fn render_window(&self, buffer: &mut [u8], line: u8) {
         let map_offset = self.get_wndw_tile_map_index() as usize * TILE_MAP_TABLE_SIZE;
         let palette = self.get_bg_palette();
         let coords = self.get_window_coords();
-        if (coords.x as usize > SCREEN_WIDTH) || (coords.y as usize > SCREEN_HEIGHT) {
+        if (coords.x as usize > SCREEN_WIDTH) || (coords.y > line) {
             return;
         }
-        for y in (coords.y as usize)..SCREEN_HEIGHT {
-            let row = y % TILESIZE;
-            for x in (coords.x as usize)..SCREEN_WIDTH {
-                let col = x % TILESIZE;
-                let map_num = (y / TILESIZE) * LAYERSIZE + (x / TILESIZE);
-                let tile_index = self.maps[map_offset + map_num] as usize;
-                let adjusted_tile_index = if self.get_bg_wndw_tile_set_index() == 1 {
-                    tile_index as usize
-                } else {
-                    (256 + tile_index as i8 as isize) as usize
-                };
-                let tile = self.tiles[adjusted_tile_index];
-                let data = tile.get_row(row);
-                let cell = data[col];
-                let color_idx = palette[cell as usize];
-                let color = GB_PALETTE[color_idx as usize];
-                let buffer_idx = 4 * (y * SCREEN_WIDTH + x);
-                for i in 0..4 {
-                    buffer[buffer_idx + i] = color[i];
-                }
+        let y = (line - coords.y) as usize;
+        let row = y % TILESIZE;
+        for x in (coords.x as usize)..SCREEN_WIDTH {
+            let col = x % TILESIZE;
+            let map_num = (y / TILESIZE) * LAYERSIZE + (x / TILESIZE);
+            let tile_index = self.maps[map_offset + map_num] as usize;
+            let adjusted_tile_index = if self.get_bg_wndw_tile_set_index() == 1 {
+                tile_index as usize
+            } else {
+                (256 + tile_index as i8 as isize) as usize
+            };
+            let tile = self.tiles[adjusted_tile_index];
+            let data = tile.get_row(row);
+            let cell = data[col];
+            let color_idx = palette[cell as usize];
+            let color = GB_PALETTE[color_idx as usize];
+            for i in 0..4 {
+                buffer[4 * x + i] = color[i];
             }
         }
     }
 
-    fn render_sprites(&self, buffer: &mut [u8]) {
+    fn render_sprites(&self, buffer: &mut [u8], line: u8) {
         let sprites = self.sort_sprites();
         let bg_palette = self.get_bg_palette();
         let is_8x16 = self.are_sprites_8x16();
         for spr in sprites {
             let height = if is_8x16 { 16 } else { 8 };
-            let palette = self.get_sprite_palette(spr.use_palette1());
             let coords = spr.get_coords();
+            let signed_line = line as isize;
+            if signed_line < coords.1 || coords.1 + height <= signed_line  {
+                continue
+            }
+            let palette = self.get_sprite_palette(spr.use_palette1());
             let behind_bg = spr.get_bg_priority();
-            for y in 0..height {
-                let y_flipped = spr.is_y_flipped();
-                let spr_idx = if is_8x16 {
-                    if (y < 8 && !y_flipped) || (8 < y && y_flipped) {
-                        spr.get_tile_num() & 0xFE
-                    } else {
-                        spr.get_tile_num() | 0x01
-                    }
+            let y = (signed_line - coords.1) as isize;
+            let y_flipped = spr.is_y_flipped();
+            let spr_idx = if is_8x16 {
+                if (y < 8 && !y_flipped) || (8 < y && y_flipped) {
+                    spr.get_tile_num() & 0xFE
                 } else {
-                    spr.get_tile_num()
-                };
-                let tile = self.tiles[spr_idx as usize];
-                let screen_y = y + coords.1;
-                if screen_y < 0 || screen_y >= SCREEN_HEIGHT as isize {
+                    spr.get_tile_num() | 0x01
+                }
+            } else {
+                spr.get_tile_num()
+            };
+            let tile = self.tiles[spr_idx as usize];
+            let screen_y = y + coords.1;
+            if screen_y < 0 || screen_y >= SCREEN_HEIGHT as isize {
+                continue;
+            }
+            let mut data_y = if y_flipped { height - y - 1 } else { y };
+            data_y %= 8;
+            let row = tile.get_row(data_y as usize);
+            for x in 0..8 {
+                let data_x = if spr.is_x_flipped() { 7 - x } else { x };
+                let cell = row[data_x as usize];
+                // Continue if pixel is transparent
+                if cell == 0 {
                     continue;
                 }
-                let mut data_y = if spr.is_y_flipped() { 7 - y } else { y };
-                data_y %= 8;
-                let row = tile.get_row(data_y as usize);
-                for x in 0..8 {
-                    let data_x = if spr.is_x_flipped() { 7 - x } else { x };
-                    let cell = row[data_x as usize];
-                    // Continue if pixel is transparent
-                    if cell == 0 {
-                        continue;
-                    }
-                    let screen_x = x + coords.0;
-                    if screen_x < 0 || screen_x >= SCREEN_WIDTH as isize {
-                        continue;
-                    }
-                    let buffer_idx = 4 * (screen_y as usize * SCREEN_WIDTH + screen_x as usize);
-                    let current_rgba = &buffer[buffer_idx..(buffer_idx + 4)];
-                    // If current RGBA value isn't the transparent color, continue
-                    if behind_bg && current_rgba != GB_PALETTE[bg_palette[0] as usize] {
-                        continue;
-                    }
-                    let color_idx = palette[cell as usize];
-                    let color = GB_PALETTE[color_idx as usize];
-                    for i in 0..4 {
-                        buffer[buffer_idx + i] = color[i];
-                    }
+                let screen_x = x + coords.0;
+                if screen_x < 0 || screen_x >= SCREEN_WIDTH as isize {
+                    continue;
+                }
+                let buffer_idx = 4 * (screen_x as usize);
+                let current_rgba = &buffer[buffer_idx..(buffer_idx + 4)];
+                // If current RGBA value isn't the transparent color, continue
+                if behind_bg && current_rgba != GB_PALETTE[bg_palette[0] as usize] {
+                    continue;
+                }
+                let color_idx = palette[cell as usize];
+                let color = GB_PALETTE[color_idx as usize];
+                for i in 0..4 {
+                    buffer[buffer_idx + i] = color[i];
                 }
             }
         }
@@ -377,5 +367,25 @@ impl Ppu {
         } else {
              unpack_u8(self.read_lcd_reg(OBP0))
         }
+    }
+    pub fn render_scanline(&mut self) {
+        let line = self.read_lcd_reg(LY);
+        let mut row = [0xFF; SCREEN_WIDTH * 4];
+
+        if self.is_bg_layer_displayed() {
+            self.render_bg(&mut row, line);
+        }
+
+        if self.is_window_layer_displayed() {
+            self.render_window(&mut row, line);
+        }
+
+        if self.is_sprite_layer_displayed() {
+            self.render_sprites(&mut row, line);
+        }
+
+        let start_idx = line as usize * SCREEN_WIDTH * 4;
+        let end_idx = (line + 1) as usize * SCREEN_WIDTH * 4;
+        self.screen_buffer[start_idx..end_idx].copy_from_slice(&row);
     }
 }
