@@ -120,4 +120,7 @@ impl Bus {
     pub fn render_scanline(&mut self) {
         self.ppu.render_scanline();
     }
+    pub fn get_title(&self) -> &str {
+        self.rom.get_title()
+    }
 }

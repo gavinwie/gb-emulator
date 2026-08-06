@@ -62,6 +62,10 @@ impl GB {
             self.cpu.press_button(button, pressed);
         }
     }
+    #[wasm_bindgen]
+    pub fn get_title(&self) -> String {
+        self.cpu.get_title().to_string()
+    }
 }
 
 fn key2btn(key: &str) -> Option<Buttons> {
