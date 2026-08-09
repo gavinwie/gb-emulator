@@ -1,4 +1,4 @@
-use crate::cart::{Cart, ROM_START, ROM_STOP};
+use crate::cart::{Cart, EXT_RAM_START, EXT_RAM_STOP, ROM_START, ROM_STOP};
 use crate::ppu::{Ppu, VRAM_START, VRAM_STOP, LCD_REG_START, LCD_REG_STOP, OAM_START, OAM_STOP};
 use crate::io::{IO, Buttons, IO_START, IO_STOP};
 use crate::ppu::PpuUpdateResult;
@@ -43,6 +43,9 @@ impl Bus {
             VRAM_START..=VRAM_STOP => {
                 self.ppu.read_vram(addr)
             },
+            EXT_RAM_START..=EXT_RAM_STOP => {
+                self.rom.read_ram(addr)
+            },
             WRAM_START..=ECHO_STOP => {
                 self.wram.read_u8(addr)
             },
@@ -71,6 +74,9 @@ impl Bus {
             },
             VRAM_START..=VRAM_STOP => {
                 self.ppu.write_vram(addr, val);
+            },
+            EXT_RAM_START..=EXT_RAM_STOP => {
+                self.rom.write_ram(addr, val);
             },
             WRAM_START..=ECHO_STOP => {
                 self.wram.write_u8(addr, val)

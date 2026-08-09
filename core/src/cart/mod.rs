@@ -8,6 +8,20 @@ const TITLE_STOP: usize  = 0x0142;
 
 const CART_TYPE_ADDR: usize = 0x0147;
 
+const RAM_SIZES: [usize; 6] = [
+    0,
+    2,
+    8,
+    32,
+    128,
+    64
+];
+
+const RAM_SIZE_ADDR: usize = 0x0149;
+pub const EXT_RAM_START: u16    = 0xA000;
+pub const EXT_RAM_STOP: u16     = 0xBFFF;
+
+
 #[derive(Clone, Copy, PartialEq)]
 pub enum MBC {
     NONE,
@@ -20,6 +34,7 @@ pub enum MBC {
 
 pub struct Cart {
     rom: Vec<u8>,
+    ram: Vec<u8>,
     mbc: MBC,
 }
 
@@ -27,6 +42,7 @@ impl Cart {
     pub fn new() -> Self {
         Self {
             rom: Vec::new(),
+            ram: Vec::new(),
             mbc: MBC::NONE,
         }
     }
@@ -39,6 +55,7 @@ impl Cart {
     pub fn load_cart(&mut self, rom: &[u8]) {
         self.rom = rom.to_vec();
         self.mbc = self.get_mbc();
+        self.init_ext_ram();
     }
 
     pub fn read_cart(&self, addr: u16) -> u8 {
@@ -85,5 +102,28 @@ impl Cart {
         let cart_type = self.rom[CART_TYPE_ADDR];
         has_ext_ram.contains(&cart_type)
     }
+
+    fn init_ext_ram(&mut self) {
+        let mut ram_size_idx = self.rom[RAM_SIZE_ADDR] as usize;
+
+        // Some headers don't report their external RAM capacity correctly
+        if self.has_external_ram() && ram_size_idx == 0 {
+            ram_size_idx = 1;
+        }
+
+        let ram_size = RAM_SIZES[ram_size_idx] * 1024;
+        self.ram = vec![0; ram_size];
+    }
+
+    pub fn read_ram(&self, addr: u16) -> u8 {
+        let rel_addr = addr - EXT_RAM_START;
+        self.ram[rel_addr as usize]
+    }
+
+    pub fn write_ram(&mut self, addr: u16, val: u8) {
+        let rel_addr = addr - EXT_RAM_START;
+        self.ram[rel_addr as usize] = val;
+    }
+
 }
 
