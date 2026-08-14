@@ -22,6 +22,19 @@ pub const EXT_RAM_START: u16    = 0xA000;
 pub const EXT_RAM_STOP: u16     = 0xBFFF;
 
 
+const ROM_BANK_SIZE: usize = 0x4000;
+const RAM_BANK_SIZE: usize = 0x2000;
+
+const RAM_ENABLE_START: u16     = 0x0000;
+const RAM_ENABLE_STOP: u16      = 0x1FFF;
+const ROM_BANK_NUM_START: u16   = 0x2000;
+const ROM_BANK_NUM_STOP: u16    = 0x3FFF;
+const RAM_BANK_NUM_START: u16   = 0x4000;
+const RAM_BANK_NUM_STOP: u16    = 0x5FFF;
+const ROM_RAM_MODE_START: u16   = 0x6000;
+const ROM_RAM_MODE_STOP: u16    = 0x7FFF;
+
+
 #[derive(Clone, Copy, PartialEq)]
 pub enum MBC {
     NONE,
@@ -35,7 +48,11 @@ pub enum MBC {
 pub struct Cart {
     rom: Vec<u8>,
     ram: Vec<u8>,
+    rom_bank: u16,
+    ram_bank: u8,
     mbc: MBC,
+    rom_mode: bool,
+    ram_enabled: bool,
 }
 
 impl Cart {
@@ -43,7 +60,11 @@ impl Cart {
         Self {
             rom: Vec::new(),
             ram: Vec::new(),
+            rom_bank: 1,
+            ram_bank: 0,
             mbc: MBC::NONE,
+            rom_mode: true,
+            ram_enabled: false,
         }
     }
 
@@ -59,12 +80,21 @@ impl Cart {
     }
 
     pub fn read_cart(&self, addr: u16) -> u8 {
-        // TODO: Handle bank switching
-        self.rom[addr as usize]
+        if (addr as usize) < ROM_BANK_SIZE {
+            self.rom[addr as usize]
+        } else {
+            let rel_addr = (addr as usize) - ROM_BANK_SIZE;
+            let bank_addr = (self.rom_bank as usize) * ROM_BANK_SIZE + rel_addr;
+            self.rom[bank_addr]
+        }
     }
 
     pub fn write_cart(&mut self, addr: u16, val: u8) {
-        // TODO: Handle bank switching
+        match self.mbc {
+            MBC::NONE => {},
+            MBC::MBC1 => { self.mbc1_write_rom(addr, val); },
+            _ => unimplemented!()
+        }
     }
 
     fn get_mbc(&self) -> MBC {
@@ -76,6 +106,40 @@ impl Cart {
             0x0F..=0x13 =>  { MBC::MBC3 },
             0x19..=0x1E =>  { MBC::MBC5 },
             _ =>            { MBC::INV },
+        }
+    }
+
+    fn mbc1_write_rom(&mut self, addr: u16, val: u8) {
+        match addr {
+            RAM_ENABLE_START..=RAM_ENABLE_STOP => {
+                self.ram_enabled = val == 0x0A;
+            },
+            ROM_BANK_NUM_START..=ROM_BANK_NUM_STOP => {
+                let bank = (val & 0x1F) as u16;
+                match bank {
+                    // Bank numbers 0x00, 0x20, 0x40, 0x60 aren't used
+                    // Instead they load the next bank
+                    0x00 | 0x20 | 0x40 | 0x60 => {
+                        self.rom_bank = bank + 1;
+                    },
+                    _ => {
+                        self.rom_bank = bank;
+                    }
+                }
+            },
+            RAM_BANK_NUM_START..=RAM_BANK_NUM_STOP => {
+                let bits = val & 0b11;
+
+                if self.rom_mode {
+                    self.rom_bank |= (bits << 5) as u16;
+                } else {
+                    self.ram_bank = bits;
+                }
+            },
+            ROM_RAM_MODE_START..=ROM_RAM_MODE_STOP => {
+                self.rom_mode = val == 0;
+            },
+            _ => unreachable!()
         }
     }
 
@@ -116,13 +180,33 @@ impl Cart {
     }
 
     pub fn read_ram(&self, addr: u16) -> u8 {
-        let rel_addr = addr - EXT_RAM_START;
-        self.ram[rel_addr as usize]
+        match self.mbc {
+            MBC::NONE | MBC::MBC1 => {
+                let rel_addr = (addr - EXT_RAM_START) as usize;
+                let bank_addr = (self.ram_bank as usize) * RAM_BANK_SIZE + rel_addr;
+                self.ram[bank_addr]
+            },
+            _ => unimplemented!()
+        }
     }
 
     pub fn write_ram(&mut self, addr: u16, val: u8) {
-        let rel_addr = addr - EXT_RAM_START;
-        self.ram[rel_addr as usize] = val;
+        match self.mbc {
+            MBC::NONE => {
+                let rel_addr = addr - EXT_RAM_START;
+                self.ram[rel_addr as usize] = val;
+            },
+            MBC::MBC1 => self.mbc1_write_ram(addr, val),
+            _ => unimplemented!()
+        }
+    }
+
+    fn mbc1_write_ram(&mut self, addr: u16, val: u8) {
+        if self.ram_enabled {
+            let rel_addr = (addr - EXT_RAM_START) as usize;
+            let ram_addr = (self.ram_bank as usize) * RAM_BANK_SIZE + rel_addr;
+            self.ram[ram_addr] = val;
+        }
     }
 
 }
