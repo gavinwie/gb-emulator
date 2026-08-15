@@ -1,5 +1,7 @@
 use std::str::from_utf8;
 
+use crate::utils::BitOps;
+
 pub const ROM_START: u16    = 0x0000;
 pub const ROM_STOP: u16     = 0x7FFF;
 
@@ -33,6 +35,8 @@ const RAM_BANK_NUM_START: u16   = 0x4000;
 const RAM_BANK_NUM_STOP: u16    = 0x5FFF;
 const ROM_RAM_MODE_START: u16   = 0x6000;
 const ROM_RAM_MODE_STOP: u16    = 0x7FFF;
+
+const MBC2_ROM_CONTROL_BIT: u8  = 8;
 
 
 #[derive(Clone, Copy, PartialEq)]
@@ -93,6 +97,7 @@ impl Cart {
         match self.mbc {
             MBC::NONE => {},
             MBC::MBC1 => { self.mbc1_write_rom(addr, val); },
+            MBC::MBC2 => { self.mbc2_write_rom(addr, val); },
             _ => unimplemented!()
         }
     }
@@ -142,6 +147,14 @@ impl Cart {
             _ => unreachable!()
         }
     }
+    fn mbc2_write_rom(&mut self, addr: u16, val: u8) {
+        let bank_swap = addr.get_bit(MBC2_ROM_CONTROL_BIT);
+        if bank_swap {
+            self.rom_bank = (val & 0x0F) as u16;
+        } else {
+            self.ram_enabled = val == 0x0A;
+        }
+    }
 
     pub fn has_battery(&self) -> bool {
         let has_battery = [
@@ -181,7 +194,7 @@ impl Cart {
 
     pub fn read_ram(&self, addr: u16) -> u8 {
         match self.mbc {
-            MBC::NONE | MBC::MBC1 => {
+            MBC::NONE | MBC::MBC1 | MBC::MBC2 => {
                 let rel_addr = (addr - EXT_RAM_START) as usize;
                 let bank_addr = (self.ram_bank as usize) * RAM_BANK_SIZE + rel_addr;
                 self.ram[bank_addr]
@@ -196,12 +209,12 @@ impl Cart {
                 let rel_addr = addr - EXT_RAM_START;
                 self.ram[rel_addr as usize] = val;
             },
-            MBC::MBC1 => self.mbc1_write_ram(addr, val),
+            MBC::MBC1 | MBC::MBC2 => self.mbc12_write_ram(addr, val),
             _ => unimplemented!()
         }
     }
 
-    fn mbc1_write_ram(&mut self, addr: u16, val: u8) {
+    fn mbc12_write_ram(&mut self, addr: u16, val: u8) {
         if self.ram_enabled {
             let rel_addr = (addr - EXT_RAM_START) as usize;
             let ram_addr = (self.ram_bank as usize) * RAM_BANK_SIZE + rel_addr;
